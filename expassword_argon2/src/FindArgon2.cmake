@@ -1,0 +1,74 @@
+cmake_minimum_required(VERSION 2.8.3)
+
+########## Private ##########
+if(NOT DEFINED ARGON2_PUBLIC_VAR_NS)
+    set(ARGON2_PUBLIC_VAR_NS "ARGON2")
+endif(NOT DEFINED ARGON2_PUBLIC_VAR_NS)
+if(NOT DEFINED ARGON2_PRIVATE_VAR_NS)
+    set(ARGON2_PRIVATE_VAR_NS "_${ARGON2_PUBLIC_VAR_NS}")
+endif(NOT DEFINED ARGON2_PRIVATE_VAR_NS)
+
+function(argon2_debug _VARNAME)
+    if(${ARGON2_PUBLIC_VAR_NS}_DEBUG)
+        if(DEFINED ${ARGON2_PUBLIC_VAR_NS}_${_VARNAME})
+            message("${ARGON2_PUBLIC_VAR_NS}_${_VARNAME} = ${${ARGON2_PUBLIC_VAR_NS}_${_VARNAME}}")
+        else(DEFINED ${ARGON2_PUBLIC_VAR_NS}_${_VARNAME})
+            message("${ARGON2_PUBLIC_VAR_NS}_${_VARNAME} = <UNDEFINED>")
+        endif(DEFINED ${ARGON2_PUBLIC_VAR_NS}_${_VARNAME})
+    endif(${ARGON2_PUBLIC_VAR_NS}_DEBUG)
+endfunction(argon2_debug)
+
+# Alias all Argon2_FIND_X variables to ARGON2_FIND_X
+# Workaround for find_package: no way to force case of variable's names it creates (I don't want to change MY coding standard)
+set(${ARGON2_PRIVATE_VAR_NS}_FIND_PKG_PREFIX "Argon2")
+get_directory_property(${ARGON2_PRIVATE_VAR_NS}_CURRENT_VARIABLES VARIABLES)
+foreach(${ARGON2_PRIVATE_VAR_NS}_VARNAME ${${ARGON2_PRIVATE_VAR_NS}_CURRENT_VARIABLES})
+    if(${ARGON2_PRIVATE_VAR_NS}_VARNAME MATCHES "^${${ARGON2_PRIVATE_VAR_NS}_FIND_PKG_PREFIX}")
+        string(REGEX REPLACE "^${${ARGON2_PRIVATE_VAR_NS}_FIND_PKG_PREFIX}" "${ARGON2_PUBLIC_VAR_NS}" ${ARGON2_PRIVATE_VAR_NS}_NORMALIZED_VARNAME ${${ARGON2_PRIVATE_VAR_NS}_VARNAME})
+        set(${${ARGON2_PRIVATE_VAR_NS}_NORMALIZED_VARNAME} ${${${ARGON2_PRIVATE_VAR_NS}_VARNAME}})
+    endif(${ARGON2_PRIVATE_VAR_NS}_VARNAME MATCHES "^${${ARGON2_PRIVATE_VAR_NS}_FIND_PKG_PREFIX}")
+endforeach(${ARGON2_PRIVATE_VAR_NS}_VARNAME)
+
+########## Public ##########
+find_path(
+    ${ARGON2_PUBLIC_VAR_NS}_INCLUDE_DIRS
+    NAMES argon2.h
+)
+
+if(${ARGON2_PUBLIC_VAR_NS}_INCLUDE_DIRS)
+    find_library(
+        ${ARGON2_PUBLIC_VAR_NS}_LIBRARIES
+        NAMES argon2
+    )
+
+    include(FindPackageHandleStandardArgs)
+    if(${ARGON2_PUBLIC_VAR_NS}_FIND_REQUIRED AND NOT ${ARGON2_PUBLIC_VAR_NS}_FIND_QUIETLY)
+        find_package_handle_standard_args(
+            ${ARGON2_PUBLIC_VAR_NS}
+            REQUIRED_VARS ${ARGON2_PUBLIC_VAR_NS}_LIBRARIES ${ARGON2_PUBLIC_VAR_NS}_INCLUDE_DIRS
+        )
+    else(${ARGON2_PUBLIC_VAR_NS}_FIND_REQUIRED AND NOT ${ARGON2_PUBLIC_VAR_NS}_FIND_QUIETLY)
+        find_package_handle_standard_args(${ARGON2_PUBLIC_VAR_NS} "argon2 not found" ${ARGON2_PUBLIC_VAR_NS}_LIBRARIES ${ARGON2_PUBLIC_VAR_NS}_INCLUDE_DIRS)
+    endif(${ARGON2_PUBLIC_VAR_NS}_FIND_REQUIRED AND NOT ${ARGON2_PUBLIC_VAR_NS}_FIND_QUIETLY)
+
+else(${ARGON2_PUBLIC_VAR_NS}_INCLUDE_DIRS)
+
+    if(${ARGON2_PUBLIC_VAR_NS}_FIND_REQUIRED AND NOT ${ARGON2_PUBLIC_VAR_NS}_FIND_QUIETLY)
+        message(FATAL_ERROR "Could not find argon2 include directory")
+    endif(${ARGON2_PUBLIC_VAR_NS}_FIND_REQUIRED AND NOT ${ARGON2_PUBLIC_VAR_NS}_FIND_QUIETLY)
+
+endif(${ARGON2_PUBLIC_VAR_NS}_INCLUDE_DIRS)
+
+mark_as_advanced(
+    ${ARGON2_PUBLIC_VAR_NS}_INCLUDE_DIRS
+    ${ARGON2_PUBLIC_VAR_NS}_LIBRARIES
+)
+
+# IN (args)
+argon2_debug("FIND_REQUIRED")
+argon2_debug("FIND_QUIETLY")
+argon2_debug("FIND_VERSION")
+# OUT
+# Linking
+argon2_debug("INCLUDE_DIRS")
+argon2_debug("LIBRARIES")

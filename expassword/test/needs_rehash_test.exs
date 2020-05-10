@@ -5,12 +5,12 @@ defmodule ExPassword.NeedsRehashTest do
   describe "ExPassword.needs_rehash?/3" do
     test "returns true if algorithm is not the same" do
       # algo = MD5 ; hash = SHA1
-      assert ExPassword.needs_rehash?(ExPassword.MD5, "da39a3ee5e6b4b0d3255bfef95601890afd80709")
+      assert ExPassword.needs_rehash?(ExPassword.Test.MD5, "da39a3ee5e6b4b0d3255bfef95601890afd80709")
       # algo = SHA1 ; hash = MD5
-      assert ExPassword.needs_rehash?(ExPassword.SHA1, "d41d8cd98f00b204e9800998ecf8427e")
+      assert ExPassword.needs_rehash?(ExPassword.Test.SHA1, "d41d8cd98f00b204e9800998ecf8427e")
     end
 
-    @algo ExPassword.SSHA
+    @algo ExPassword.Test.SSHA
     # "{SSHA}0c0blFTXXNuAMHECS4uxrj3ZieMoWImr" = "testing123" with 4 bytes of salt
     @hash "{SSHA}0c0blFTXXNuAMHECS4uxrj3ZieMoWImr"
     test "returns true only if salt is higher for SSHA" do

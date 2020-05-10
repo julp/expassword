@@ -1,12 +1,16 @@
 defmodule ExPassword.MixProject do
   use Mix.Project
 
+  defp elixirc_paths(:test), do: ~W[lib test/support]
+  defp elixirc_paths(_), do: ~W[lib]
+
   def project do
     [
       app: :expassword,
       version: "0.1.0",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
+      elixirc_paths: elixirc_paths(Mix.env()),
       deps: deps()
     ]
   end
@@ -29,7 +33,12 @@ defmodule ExPassword.MixProject do
       if :inet.gethostname() == {:ok, 'freebsd'} do
         {:bcrypt_elixir, path: "~/elixir/bcrypt_elixir", optional: true}
       else
-        {:bcrypt_elixir, git: "https://github.com/julp/bcrypt_elixir.git", branch: "master", optional: true}
+        {:bcrypt_elixir, ">= 0.0.0"}
+      end,
+      if :inet.gethostname() == {:ok, 'freebsd'} do
+        {:expassword_argon2, path: "~/elixir/expassword/expassword_argon2", optional: true}
+      else
+        {:expassword_argon2, ">= 0.0.0"}
       end,
     ]
   end

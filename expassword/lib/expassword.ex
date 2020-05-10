@@ -8,10 +8,12 @@ defmodule ExPassword do
   @known_algorithms [
     # implies :expassword_bcrypt listed as dependency in your mix.exs
     Bcrypt,
+    # implies :expassword_argon2 listed as dependency in your mix.exs
+    ExPassword.Argon2,
     # <testing only>
-    ExPassword.MD5,
-    ExPassword.SHA1,
-    ExPassword.SSHA,
+    ExPassword.Test.MD5,
+    ExPassword.Test.SHA1,
+    ExPassword.Test.SSHA,
     # </testing only>
   ]
   @available_algorithms for algorithm <- @known_algorithms, {:module, algorithm} == Code.ensure_compiled(algorithm), do: algorithm
@@ -21,6 +23,35 @@ defmodule ExPassword do
   def find_algorithm(hash) do
     @available_algorithms
     |> Enum.find(nil, &(&1.valid?(hash)))
+  end
+
+  @doc false
+  def available_algorithms do
+    @available_algorithms
+  end
+
+  @doc ~S"""
+  TODO
+  """
+  @spec x(user :: struct | nil, password :: ExPassword.Algorithm.password, field :: atom) :: {:ok, ExPassword.Algorithm.hash | nil} | {:error, :atom}
+  def x(user, password, field \\ :encrypted_password)
+
+  def x(nil, password, _field) do
+    ExPassword.hash(:default, password)
+    {:error, :user_is_nil}
+  end
+
+  def x(user, password, field) do
+    hash = Map.fetch!(user, field)
+    case ExPassword.verify?(password, hash) do
+      true -> # TODO: {:ok, ?}
+        change = if ExPassword.needs_rehash?(:default, hash) do # TODO
+          [{field, ExPassword.hash(:default, password)}]
+        end
+        {:ok, change}
+      false -> # TODO: {:error, ?}
+        {:error, :password_missmatch}
+    end
   end
 
   @doc ~S"""
