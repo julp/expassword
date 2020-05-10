@@ -1,27 +1,18 @@
-# ExPassword
+This is a repository for the following hex packages:
 
-This is a port of PHP password functions.
+* expassword_algorithm: for the module which serves as behaviour to support new hashing methods
+* expassword: the base of ExPassword but it does not include any hashing algorithm, you have to list them dependency in your mix.exs
+* expassword_argon2: to add support for Argon2 to ExPassword
+* ~~expassword_bcrypt: to add support for Bcrypt to ExPassword~~
 
-If you never used them, when you write an authentication system, you have to stick to the initial algorithm you chose.
-
-This is not really acceptable, you should have the ability to change the hashing algorithm or its options at any time, without asking your users to reset their password. The goal here, when a change like that happens, is to ensure compatibility with previous algorithms and transparently update their hash when they successfuly log in.
-
-## Installation
-
-~~If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `expassword` to your list of dependencies in `mix.exs`:~~
-
-This is not ready for production neither published on Hex, so to use it in one of your project, you have to modify your mix.exs file like so:
+So to use expassword you need `:expassword` in your deps/0 function in your mix.exs and at least one of `:expassword_argon2` or `:expassword_bcrypt`
 
 ```elixir
 def deps do
   [
-    {:expassword, git: "https://github.com/julp/expassword.git", branch: "master"},
-    {:bcrypt_elixir, git: "https://github.com/julp/bcrypt_elixir.git", branch: "expassword"},
+    {:expassword, ">= 0.0.0"},
+    {:expassword_argon2, ">= 0.0.0"},
+    #{:expassword_bcrypt, ">= 0.0.0"},
   ]
 end
 ```
-
-~~Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/expassword](https://hexdocs.pm/expassword).~~

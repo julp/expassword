@@ -28,6 +28,9 @@
 #define enif_get_uint32(/*ErlNifEnv **/ env, /*ERL_NIF_TERM*/ input, /*uint32_t **/ output) \
     enif_get_uint(env, input, output)
 
+#define enif_make_uint32(/*ErlNifEnv **/ env, /*uint32_t **/ input) \
+    enif_make_uint(env, input)
+
 #define MEMCMP(/*const char **/ haystack, /*const char **/ needle) \
     memcmp(haystack, needle, STR_LEN(needle))
 
@@ -102,7 +105,7 @@ static bool argon2_parse_hash(const ErlNifBinary *hash, argon2_type *type, uint3
         r = end + STR_LEN("$m=");
     } else if (0 == MEMCMP(r, "m=")) {
         *version = ARGON2_VERSION_10;
-        r = end + STR_LEN("m=");
+        r += STR_LEN("m=");
     } else {
         return false;
     }
@@ -190,7 +193,7 @@ static ERL_NIF_TERM expassword_argon2_verify_nif(ErlNifEnv *env, int argc, const
         char buffer[hash.size + 1];
 
         memcpy(buffer, (const char *) hash.data, hash.size);
-        buffer[hash.size] = 0;
+        buffer[hash.size] = '\0';
         output = ARGON2_OK == argon2_verify(buffer, password.data, password.size, type) ? ATOM(env, "true") : ATOM(env, "false");
     } else {
         output = enif_make_badarg(env);
@@ -201,6 +204,7 @@ static ERL_NIF_TERM expassword_argon2_verify_nif(ErlNifEnv *env, int argc, const
 
 enum {
     ARGON2_OPTIONS_TYPE,
+    ARGON2_OPTIONS_VERSION,
     ARGON2_OPTIONS_THREADS,
     ARGON2_OPTIONS_TIME_COST,
     ARGON2_OPTIONS_MEMORY_COST,
@@ -224,12 +228,14 @@ static ERL_NIF_TERM expassword_argon2_get_options_nif(ErlNifEnv *env, int argc, 
         argon_type = argon2_type2string(type, 0);
         pairs[0][ARGON2_OPTIONS_TYPE] = ATOM(env, "type");
         pairs[1][ARGON2_OPTIONS_TYPE] = enif_make_atom(env, argon_type);
+        pairs[0][ARGON2_OPTIONS_VERSION] = ATOM(env, "version");
+        pairs[1][ARGON2_OPTIONS_VERSION] = enif_make_uint32(env, version);
         pairs[0][ARGON2_OPTIONS_THREADS] = ATOM(env, "threads");
-        pairs[1][ARGON2_OPTIONS_THREADS] = enif_make_uint64(env, threads);
+        pairs[1][ARGON2_OPTIONS_THREADS] = enif_make_uint32(env, threads);
         pairs[0][ARGON2_OPTIONS_TIME_COST] = ATOM(env, "time_cost");
-        pairs[1][ARGON2_OPTIONS_TIME_COST] = enif_make_uint64(env, time_cost);
+        pairs[1][ARGON2_OPTIONS_TIME_COST] = enif_make_uint32(env, time_cost);
         pairs[0][ARGON2_OPTIONS_MEMORY_COST] = ATOM(env, "memory_cost");
-        pairs[1][ARGON2_OPTIONS_MEMORY_COST] = enif_make_uint64(env, memory_cost);
+        pairs[1][ARGON2_OPTIONS_MEMORY_COST] = enif_make_uint32(env, memory_cost);
         enif_make_map_from_arrays(env, pairs[0], pairs[1], _ARGON2_OPTIONS_COUNT, &options);
 
         output = enif_make_tuple2(env, ATOM(env, "ok"), options);
