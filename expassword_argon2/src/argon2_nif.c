@@ -10,6 +10,26 @@
 
 #include "parsenum.h"
 
+#ifdef __GNUC__
+# define GCC_VERSION (__GNUC__ * 1000 + __GNUC_MINOR__)
+#else
+# define GCC_VERSION 0
+#endif /* __GNUC__ */
+
+#ifndef __has_attribute
+# define __has_attribute(x) 0
+#endif /* !__has_attribute */
+
+#ifndef __has_builtin
+# define __has_builtin(x) 0
+#endif /* !__has_builtin */
+
+#if GCC_VERSION || __has_attribute(unused)
+# define UNUSED(x) UNUSED_ ## x __attribute__((unused))
+#else
+# define UNUSED
+#endif /* UNUSED */
+
 #define ARRAY_SIZE(array) \
     (sizeof(array) / sizeof((array)[0]))
 
@@ -124,6 +144,32 @@ static bool argon2_parse_hash(const ErlNifBinary *hash, argon2_type *type, uint3
     return true;
 }
 
+static ERL_NIF_TERM make_elixir_exception(ErlNifEnv *env, const char *module, const char *error)
+{
+    enum {
+        ERROR_STRUCT,
+        ERROR_EXCEPTION,
+        ERROR_MESSAGE,
+        _ERROR_COUNT,
+    };
+    size_t error_len;
+    unsigned char *buffer;
+    ERL_NIF_TERM reason, exception, pairs[2][_ERROR_COUNT];
+
+    error_len = strlen(error);
+    buffer = enif_make_new_binary(env, error_len, &reason);
+    memcpy(buffer, error, error_len);
+    pairs[0][ERROR_STRUCT] = ATOM(env, "__struct__");
+    pairs[1][ERROR_STRUCT] = enif_make_atom(env, module);
+    pairs[0][ERROR_EXCEPTION] = ATOM(env, "__exception__");
+    pairs[1][ERROR_EXCEPTION] = ATOM(env, "true");
+    pairs[0][ERROR_MESSAGE] = ATOM(env, "message");
+    pairs[1][ERROR_MESSAGE] = reason;
+    enif_make_map_from_arrays(env, pairs[0], pairs[1], _ERROR_COUNT, &exception);
+
+    return exception;
+}
+
 static ERL_NIF_TERM expassword_argon2_hash_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     argon2_type type;
@@ -138,38 +184,32 @@ static ERL_NIF_TERM expassword_argon2_hash_nif(ErlNifEnv *env, int argc, const E
         && enif_is_map(env, argv[2])
         && extract_options_from_erlang_map(env, argv[2], &type, &version, &threads, &time_cost, &memory_cost)
 // && printf("threads = %" PRIu32 " time_cost = %" PRIu32 ", memory_cost = %" PRIu32 "\n", threads, time_cost, memory_cost)
+#if 0
         && threads >= ARGON2_MIN_THREADS && threads <= ARGON2_MAX_THREADS
         && time_cost >= ARGON2_MIN_TIME && time_cost <= ARGON2_MAX_TIME
         && memory_cost >= ARGON2_MIN_MEMORY && memory_cost <= ARGON2_MAX_MEMORY
+#endif
     ) {
         char out[32];
         size_t encoded_len;
-        unsigned char *encoded;
         argon2_error_codes status;
 
         encoded_len = argon2_encodedlen(time_cost, memory_cost, threads, salt.size, STR_SIZE(out), type);
-        if (NULL == (encoded = enif_make_new_binary(env, encoded_len - 1, &output))) {
-            return enif_make_badarg(env); // TODO: better
-        }
-        status = argon2_hash(
-            time_cost,
-            memory_cost,
-            threads,
-            password.data,
-            password.size,
-            salt.data,
-            salt.size,
-            out,
-            STR_SIZE(out),
-            (char *) encoded,
-            encoded_len,
-            type,
-            version
-        );
-        if (ARGON2_OK == status) {
-            //
-        } else {
-            // TODO: output is invalid, shoud we have to free/release encoded?
+        {
+            char buffer[encoded_len];
+
+            status = argon2_hash(time_cost, memory_cost, threads, password.data, password.size, salt.data, salt.size, out, STR_SIZE(out), buffer, encoded_len, type, version);
+            if (ARGON2_OK == status) {
+                unsigned char *encoded;
+
+                if (NULL == (encoded = enif_make_new_binary(env, encoded_len - 1, &output))) {
+                    output = enif_make_badarg(env); // TODO: better
+                } else {
+                    memcpy(encoded, buffer, encoded_len - 1);
+                }
+            } else {
+                output = enif_raise_exception(env, make_elixir_exception(env, "Elixir.ArgumentError", argon2_error_message(status)));
+            }
         }
     } else {
         output = enif_make_badarg(env);
@@ -202,17 +242,16 @@ static ERL_NIF_TERM expassword_argon2_verify_nif(ErlNifEnv *env, int argc, const
     return output;
 }
 
-enum {
-    ARGON2_OPTIONS_TYPE,
-    ARGON2_OPTIONS_VERSION,
-    ARGON2_OPTIONS_THREADS,
-    ARGON2_OPTIONS_TIME_COST,
-    ARGON2_OPTIONS_MEMORY_COST,
-    _ARGON2_OPTIONS_COUNT,
-};
-
 static ERL_NIF_TERM expassword_argon2_get_options_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
+    enum {
+        ARGON2_OPTIONS_TYPE,
+        ARGON2_OPTIONS_VERSION,
+        ARGON2_OPTIONS_THREADS,
+        ARGON2_OPTIONS_TIME_COST,
+        ARGON2_OPTIONS_MEMORY_COST,
+        _ARGON2_OPTIONS_COUNT,
+    };
     argon2_type type;
     ErlNifBinary hash;
     ERL_NIF_TERM output;
@@ -291,4 +330,11 @@ static ErlNifFunc expassword_argon2_nif_funcs[] =
     {"valid_nif", 1, expassword_argon2_valid_nif, 0},
 };
 
-ERL_NIF_INIT(Elixir.ExPassword.Argon2.Base, expassword_argon2_nif_funcs, NULL, NULL, NULL, NULL)
+static int expassword_argon2_nif_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM UNUSED(load_info))
+{
+    // XXX
+
+    return 0;
+}
+
+ERL_NIF_INIT(Elixir.ExPassword.Argon2.Base, expassword_argon2_nif_funcs, expassword_argon2_nif_load, NULL, NULL, NULL)

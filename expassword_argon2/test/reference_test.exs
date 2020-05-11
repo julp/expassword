@@ -2,9 +2,17 @@ defmodule ExPassword.Argon2.ReferenceTest do
   use ExUnit.Case
   use Bitwise
 
-  defp hashtest(v, t, m, p, password, salt, _hexref, mcfref, type) do
-    assert mcfref == ExPassword.Argon2.hash(password, %{type: type, salt: salt, version: v, memory_cost: 1 <<< m, threads: p, time_cost: t})
+  defp hashtest(v, t, m, p, password, salt, hexref, mcfref, type) do
+    result = ExPassword.Argon2.hash(password, %{type: type, salt: salt, version: v, memory_cost: 1 <<< m, threads: p, time_cost: t})
+    result = if v == 0x10 do
+      String.replace(result, "$v=16$", "$")
+    else
+      result
+    end
+    assert mcfref == result
     assert ExPassword.Argon2.verify?(mcfref, password)
+    assert ExPassword.Argon2.verify?(result, password)
+    assert Base.decode64!(Enum.at(String.split(mcfref, "$"), -1), padding: false) == Base.decode16!(hexref, case: :lower)
   end
 
   test "argon2i with version 0x10" do

@@ -1,6 +1,6 @@
 # ExPassword
 
-This is a port of PHP password functions.
+This is a "port" of PHP password functions.
 
 If you never used them, when you write an authentication system, you have to stick to the initial algorithm you chose.
 
