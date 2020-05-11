@@ -156,18 +156,18 @@ static ERL_NIF_TERM make_elixir_exception(ErlNifEnv *env, const char *module, co
     };
     size_t error_len;
     unsigned char *buffer;
-    ERL_NIF_TERM reason, exception, pairs[2][_ERROR_COUNT];
+    ERL_NIF_TERM reason, exception, keys[_ERROR_COUNT], values[_ERROR_COUNT];
 
     error_len = strlen(error);
     buffer = enif_make_new_binary(env, error_len, &reason);
     memcpy(buffer, error, error_len);
-    pairs[0][ERROR_STRUCT] = atom___struct__;
-    pairs[1][ERROR_STRUCT] = enif_make_atom(env, module);
-    pairs[0][ERROR_EXCEPTION] = atom___exception__;
-    pairs[1][ERROR_EXCEPTION] = atom_true;
-    pairs[0][ERROR_MESSAGE] = atom_message;
-    pairs[1][ERROR_MESSAGE] = reason;
-    enif_make_map_from_arrays(env, pairs[0], pairs[1], _ERROR_COUNT, &exception);
+    keys[ERROR_STRUCT] = atom___struct__;
+    values[ERROR_STRUCT] = enif_make_atom(env, module);
+    keys[ERROR_EXCEPTION] = atom___exception__;
+    values[ERROR_EXCEPTION] = atom_true;
+    keys[ERROR_MESSAGE] = atom_message;
+    values[ERROR_MESSAGE] = reason;
+    enif_make_map_from_arrays(env, keys, values, _ERROR_COUNT, &exception);
 
     return exception;
 }
@@ -264,20 +264,20 @@ static ERL_NIF_TERM expassword_argon2_get_options_nif(ErlNifEnv *env, int argc, 
     } else if (argon2_valid_hash(&hash, NULL) && argon2_parse_hash(&hash, &type, &version, &threads, &time_cost, &memory_cost)) {
         ERL_NIF_TERM options;
         const char *argon_type;
-        ERL_NIF_TERM pairs[2][_ARGON2_OPTIONS_COUNT];
+        ERL_NIF_TERM keys[_ARGON2_OPTIONS_COUNT], values[_ARGON2_OPTIONS_COUNT];
 
         argon_type = argon2_type2string(type, 0);
-        pairs[0][ARGON2_OPTIONS_TYPE] = atom_type;
-        pairs[1][ARGON2_OPTIONS_TYPE] = enif_make_atom(env, argon_type);
-        pairs[0][ARGON2_OPTIONS_VERSION] = atom_version;
-        pairs[1][ARGON2_OPTIONS_VERSION] = enif_make_uint32(env, version);
-        pairs[0][ARGON2_OPTIONS_THREADS] = atom_threads;
-        pairs[1][ARGON2_OPTIONS_THREADS] = enif_make_uint32(env, threads);
-        pairs[0][ARGON2_OPTIONS_TIME_COST] = atom_time_cost;
-        pairs[1][ARGON2_OPTIONS_TIME_COST] = enif_make_uint32(env, time_cost);
-        pairs[0][ARGON2_OPTIONS_MEMORY_COST] = atom_memory_cost;
-        pairs[1][ARGON2_OPTIONS_MEMORY_COST] = enif_make_uint32(env, memory_cost);
-        enif_make_map_from_arrays(env, pairs[0], pairs[1], _ARGON2_OPTIONS_COUNT, &options);
+        keys[ARGON2_OPTIONS_TYPE] = atom_type;
+        values[ARGON2_OPTIONS_TYPE] = enif_make_atom(env, argon_type);
+        keys[ARGON2_OPTIONS_VERSION] = atom_version;
+        values[ARGON2_OPTIONS_VERSION] = enif_make_uint32(env, version);
+        keys[ARGON2_OPTIONS_THREADS] = atom_threads;
+        values[ARGON2_OPTIONS_THREADS] = enif_make_uint32(env, threads);
+        keys[ARGON2_OPTIONS_TIME_COST] = atom_time_cost;
+        values[ARGON2_OPTIONS_TIME_COST] = enif_make_uint32(env, time_cost);
+        keys[ARGON2_OPTIONS_MEMORY_COST] = atom_memory_cost;
+        values[ARGON2_OPTIONS_MEMORY_COST] = enif_make_uint32(env, memory_cost);
+        enif_make_map_from_arrays(env, keys, values, _ARGON2_OPTIONS_COUNT, &options);
 
         output = enif_make_tuple2(env, atom_ok, options);
     } else {
