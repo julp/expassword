@@ -42,9 +42,6 @@
 #define ARGON2I_PREFIX "$argon2i$"
 #define ARGON2ID_PREFIX "$argon2id$"
 
-#define ATOM(/*ErlNifEnv **/env, /*const char **/ string) \
-    enif_make_atom_len(env, string, STR_LEN(string))
-
 #define enif_get_uint32(/*ErlNifEnv **/ env, /*ERL_NIF_TERM*/ input, /*uint32_t **/ output) \
     enif_get_uint(env, input, output)
 
@@ -54,29 +51,34 @@
 #define MEMCMP(/*const char **/ haystack, /*const char **/ needle) \
     memcmp(haystack, needle, STR_LEN(needle))
 
+#define ATOM(x) \
+    static ERL_NIF_TERM atom_##x;
+#include "atoms.h"
+#undef ATOM
+
 static bool extract_options_from_erlang_map(ErlNifEnv *env, ERL_NIF_TERM map, argon2_type *type, uint32_t *version, uint32_t *threads, uint32_t *time_cost, uint32_t *memory_cost)
 {
     ERL_NIF_TERM value;
 
-    if (enif_get_map_value(env, map, ATOM(env, "version"), &value) && enif_get_uint32(env, value, version)) {
+    if (enif_get_map_value(env, map, atom_version, &value) && enif_get_uint32(env, value, version)) {
         // ok
     } else {
         *version = ARGON2_VERSION_NUMBER;
     }
 
     *type = Argon2_id;
-    if (enif_get_map_value(env, map, ATOM(env, "type"), &value)) {
-        if (enif_is_identical(value, ATOM(env, "argon2i"))) {
+    if (enif_get_map_value(env, map, atom_type, &value)) {
+        if (enif_is_identical(value, atom_argon2i)) {
             *type = Argon2_i;
-        }/* else if (enif_is_identical(value, ATOM(env, "argon2id"))) {
+        }/* else if (enif_is_identical(value, atom_argon2id)) {
             *type = Argon2_id;
         }*/
     }
 
     return
-           enif_get_map_value(env, map, ATOM(env, "threads"), &value) && enif_get_uint32(env, value, threads)
-        && enif_get_map_value(env, map, ATOM(env, "time_cost"), &value) && enif_get_uint32(env, value, time_cost)
-        && enif_get_map_value(env, map, ATOM(env, "memory_cost"), &value) && enif_get_uint32(env, value, memory_cost)
+           enif_get_map_value(env, map, atom_threads, &value) && enif_get_uint32(env, value, threads)
+        && enif_get_map_value(env, map, atom_time_cost, &value) && enif_get_uint32(env, value, time_cost)
+        && enif_get_map_value(env, map, atom_memory_cost, &value) && enif_get_uint32(env, value, memory_cost)
     ;
 }
 
@@ -159,11 +161,11 @@ static ERL_NIF_TERM make_elixir_exception(ErlNifEnv *env, const char *module, co
     error_len = strlen(error);
     buffer = enif_make_new_binary(env, error_len, &reason);
     memcpy(buffer, error, error_len);
-    pairs[0][ERROR_STRUCT] = ATOM(env, "__struct__");
+    pairs[0][ERROR_STRUCT] = atom___struct__;
     pairs[1][ERROR_STRUCT] = enif_make_atom(env, module);
-    pairs[0][ERROR_EXCEPTION] = ATOM(env, "__exception__");
-    pairs[1][ERROR_EXCEPTION] = ATOM(env, "true");
-    pairs[0][ERROR_MESSAGE] = ATOM(env, "message");
+    pairs[0][ERROR_EXCEPTION] = atom___exception__;
+    pairs[1][ERROR_EXCEPTION] = atom_true;
+    pairs[0][ERROR_MESSAGE] = atom_message;
     pairs[1][ERROR_MESSAGE] = reason;
     enif_make_map_from_arrays(env, pairs[0], pairs[1], _ERROR_COUNT, &exception);
 
@@ -234,7 +236,7 @@ static ERL_NIF_TERM expassword_argon2_verify_nif(ErlNifEnv *env, int argc, const
 
         memcpy(buffer, (const char *) hash.data, hash.size);
         buffer[hash.size] = '\0';
-        output = ARGON2_OK == argon2_verify(buffer, password.data, password.size, type) ? ATOM(env, "true") : ATOM(env, "false");
+        output = ARGON2_OK == argon2_verify(buffer, password.data, password.size, type) ? atom_true : atom_false;
     } else {
         output = enif_make_badarg(env);
     }
@@ -265,21 +267,21 @@ static ERL_NIF_TERM expassword_argon2_get_options_nif(ErlNifEnv *env, int argc, 
         ERL_NIF_TERM pairs[2][_ARGON2_OPTIONS_COUNT];
 
         argon_type = argon2_type2string(type, 0);
-        pairs[0][ARGON2_OPTIONS_TYPE] = ATOM(env, "type");
+        pairs[0][ARGON2_OPTIONS_TYPE] = atom_type;
         pairs[1][ARGON2_OPTIONS_TYPE] = enif_make_atom(env, argon_type);
-        pairs[0][ARGON2_OPTIONS_VERSION] = ATOM(env, "version");
+        pairs[0][ARGON2_OPTIONS_VERSION] = atom_version;
         pairs[1][ARGON2_OPTIONS_VERSION] = enif_make_uint32(env, version);
-        pairs[0][ARGON2_OPTIONS_THREADS] = ATOM(env, "threads");
+        pairs[0][ARGON2_OPTIONS_THREADS] = atom_threads;
         pairs[1][ARGON2_OPTIONS_THREADS] = enif_make_uint32(env, threads);
-        pairs[0][ARGON2_OPTIONS_TIME_COST] = ATOM(env, "time_cost");
+        pairs[0][ARGON2_OPTIONS_TIME_COST] = atom_time_cost;
         pairs[1][ARGON2_OPTIONS_TIME_COST] = enif_make_uint32(env, time_cost);
-        pairs[0][ARGON2_OPTIONS_MEMORY_COST] = ATOM(env, "memory_cost");
+        pairs[0][ARGON2_OPTIONS_MEMORY_COST] = atom_memory_cost;
         pairs[1][ARGON2_OPTIONS_MEMORY_COST] = enif_make_uint32(env, memory_cost);
         enif_make_map_from_arrays(env, pairs[0], pairs[1], _ARGON2_OPTIONS_COUNT, &options);
 
-        output = enif_make_tuple2(env, ATOM(env, "ok"), options);
+        output = enif_make_tuple2(env, atom_ok, options);
     } else {
-        output = enif_make_tuple2(env, ATOM(env, "error"), ATOM(env, "invalid"));
+        output = enif_make_tuple2(env, atom_error, atom_invalid);
     }
 
     return output;
@@ -299,7 +301,7 @@ static ERL_NIF_TERM expassword_argon2_needs_rehash_nif(ErlNifEnv *env, int argc,
         && extract_options_from_erlang_map(env, argv[1], &new_type, &new_version, &new_threads, &new_time_cost, &new_memory_cost)
         && argon2_parse_hash(&hash, &old_type, &old_version, &old_threads, &old_time_cost, &old_memory_cost)
     ) {
-        output = new_type != old_type || new_version != old_version || new_threads != old_threads || new_memory_cost != old_memory_cost || new_time_cost != old_time_cost ? ATOM(env, "true") : ATOM(env, "false");
+        output = new_type != old_type || new_version != old_version || new_threads != old_threads || new_memory_cost != old_memory_cost || new_time_cost != old_time_cost ? atom_true : atom_false;
     } else {
         output = enif_make_badarg(env);
     }
@@ -313,7 +315,7 @@ static ERL_NIF_TERM expassword_argon2_valid_nif(ErlNifEnv *env, int argc, const 
     ERL_NIF_TERM output;
 
     if (1 == argc && enif_inspect_binary(env, argv[0], &hash)) {
-      output = argon2_valid_hash(&hash, NULL) ? ATOM(env, "true") : ATOM(env, "false");
+      output = argon2_valid_hash(&hash, NULL) ? atom_true : atom_false;
     } else {
       output = enif_make_badarg(env);
     }
@@ -332,7 +334,10 @@ static ErlNifFunc expassword_argon2_nif_funcs[] =
 
 static int expassword_argon2_nif_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM UNUSED(load_info))
 {
-    // XXX
+#define ATOM(x) \
+    atom_##x = enif_make_atom_len(env, #x, STR_LEN(#x));
+#include "atoms.h"
+#undef ATOM
 
     return 0;
 }
