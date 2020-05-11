@@ -40,6 +40,8 @@ defmodule ExPassword.MixProject do
       else
         {:expassword_argon2, ">= 0.0.0"}
       end,
+      {:earmark, "~> 1.4", only: :dev},
+      {:ex_doc, "~> 0.22", only: :dev},
     ]
   end
 end

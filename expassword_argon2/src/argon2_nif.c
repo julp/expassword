@@ -41,6 +41,7 @@
 
 #define ARGON2I_PREFIX "$argon2i$"
 #define ARGON2ID_PREFIX "$argon2id$"
+#define ARGUMENT_ERROR_MODULE "Elixir.ArgumentError"
 
 #define enif_get_uint32(/*ErlNifEnv **/ env, /*ERL_NIF_TERM*/ input, /*uint32_t **/ output) \
     enif_get_uint(env, input, output)
@@ -56,30 +57,52 @@
 #include "atoms.h"
 #undef ATOM
 
+/* <default values> */
+#define DEFAULT_ARGON2_TYPE Argon2_id
+#define DEFAULT_THREADS 2
+#define DEFAULT_TIME_COST 4
+#define DEFAULT_MEMORY_COST (1<<17)
+// #define DEFAULT_SALT_LENGTH 16
+/* </default values> */
+
 static bool extract_options_from_erlang_map(ErlNifEnv *env, ERL_NIF_TERM map, argon2_type *type, uint32_t *version, uint32_t *threads, uint32_t *time_cost, uint32_t *memory_cost)
 {
     ERL_NIF_TERM value;
 
+    *type = DEFAULT_ARGON2_TYPE;
+    if (enif_get_map_value(env, map, atom_type, &value)) {
+        if (enif_is_identical(value, atom_argon2i)) {
+            *type = Argon2_i;
+        } else if (enif_is_identical(value, atom_argon2id)) {
+            *type = Argon2_id;
+        }
+    }
+
     if (enif_get_map_value(env, map, atom_version, &value) && enif_get_uint32(env, value, version)) {
-        // ok
+        // ok but we let argon2 decide if the value is valid or not
     } else {
         *version = ARGON2_VERSION_NUMBER;
     }
 
-    *type = Argon2_id;
-    if (enif_get_map_value(env, map, atom_type, &value)) {
-        if (enif_is_identical(value, atom_argon2i)) {
-            *type = Argon2_i;
-        }/* else if (enif_is_identical(value, atom_argon2id)) {
-            *type = Argon2_id;
-        }*/
+    if (enif_get_map_value(env, map, atom_threads, &value) && enif_get_uint32(env, value, threads)) {
+        // ok but we let argon2 decide if the value is valid or not
+    } else {
+        *threads = DEFAULT_THREADS;
     }
 
-    return
-           enif_get_map_value(env, map, atom_threads, &value) && enif_get_uint32(env, value, threads)
-        && enif_get_map_value(env, map, atom_time_cost, &value) && enif_get_uint32(env, value, time_cost)
-        && enif_get_map_value(env, map, atom_memory_cost, &value) && enif_get_uint32(env, value, memory_cost)
-    ;
+    if (enif_get_map_value(env, map, atom_time_cost, &value) && enif_get_uint32(env, value, time_cost)) {
+        // ok but we let argon2 decide if the value is valid or not
+    } else {
+        *time_cost = DEFAULT_TIME_COST;
+    }
+
+    if (enif_get_map_value(env, map, atom_memory_cost, &value) && enif_get_uint32(env, value, memory_cost)) {
+        // ok but we let argon2 decide if the value is valid or not
+    } else {
+        *memory_cost = DEFAULT_MEMORY_COST;
+    }
+
+    return true;
 }
 
 static bool argon2_valid_hash(const ErlNifBinary *hash, argon2_type *type)
@@ -185,12 +208,6 @@ static ERL_NIF_TERM expassword_argon2_hash_nif(ErlNifEnv *env, int argc, const E
         && enif_inspect_binary(env, argv[1], &salt)
         && enif_is_map(env, argv[2])
         && extract_options_from_erlang_map(env, argv[2], &type, &version, &threads, &time_cost, &memory_cost)
-// && printf("threads = %" PRIu32 " time_cost = %" PRIu32 ", memory_cost = %" PRIu32 "\n", threads, time_cost, memory_cost)
-#if 0
-        && threads >= ARGON2_MIN_THREADS && threads <= ARGON2_MAX_THREADS
-        && time_cost >= ARGON2_MIN_TIME && time_cost <= ARGON2_MAX_TIME
-        && memory_cost >= ARGON2_MIN_MEMORY && memory_cost <= ARGON2_MAX_MEMORY
-#endif
     ) {
         char out[32];
         size_t encoded_len;
@@ -210,7 +227,7 @@ static ERL_NIF_TERM expassword_argon2_hash_nif(ErlNifEnv *env, int argc, const E
                     memcpy(encoded, buffer, encoded_len - 1);
                 }
             } else {
-                output = enif_raise_exception(env, make_elixir_exception(env, "Elixir.ArgumentError", argon2_error_message(status)));
+                output = enif_raise_exception(env, make_elixir_exception(env, ARGUMENT_ERROR_MODULE, argon2_error_message(status)));
             }
         }
     } else {
@@ -232,11 +249,17 @@ static ERL_NIF_TERM expassword_argon2_verify_nif(ErlNifEnv *env, int argc, const
         && enif_inspect_binary(env, argv[1], &password)
         && argon2_valid_hash(&hash, &type)
     ) {
+        argon2_error_codes status;
         char buffer[hash.size + 1];
 
         memcpy(buffer, (const char *) hash.data, hash.size);
         buffer[hash.size] = '\0';
-        output = ARGON2_OK == argon2_verify(buffer, password.data, password.size, type) ? atom_true : atom_false;
+        status = argon2_verify(buffer, password.data, password.size, type);
+        if (ARGON2_VERIFY_MISMATCH == status || ARGON2_OK == status) {
+            output = ARGON2_OK == status ? atom_true : atom_false;
+        } else {
+            output = enif_raise_exception(env, make_elixir_exception(env, ARGUMENT_ERROR_MODULE, argon2_error_message(status)));
+        }
     } else {
         output = enif_make_badarg(env);
     }

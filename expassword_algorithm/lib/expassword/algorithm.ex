@@ -10,7 +10,7 @@ defmodule ExPassword.Algorithm do
   @doc ~S"""
   TODO
   """
-  @callback hash(password :: password, options :: options) :: hash
+  @callback hash(password :: password, options :: options) :: hash | no_return
 
   @doc ~S"""
   TODO
@@ -20,7 +20,7 @@ defmodule ExPassword.Algorithm do
   @doc ~S"""
   TODO
   """
-  @callback verify?(password :: password, stored_hash :: hash) :: boolean
+  @callback verify?(password :: password, stored_hash :: hash) :: boolean | no_return
 
   @doc ~S"""
   TODO

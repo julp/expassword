@@ -1,9 +1,9 @@
 defmodule Mix.Tasks.Compile.Cmake do
   def run(_) do
-    {result, _error_code} = System.cmd("cmake", [".", "-Wno-dev"], stderr_to_stdout: true)
-    Mix.shell.info result
-    {result, _error_code} = System.cmd("make", ["all"], stderr_to_stdout: true)
-    Mix.shell.info result
+    {result, 0} = System.cmd("cmake", [".", "-Wno-dev"], stderr_to_stdout: true)
+    Mix.shell.info(result)
+    {result, 0} = System.cmd("make", ["all"], stderr_to_stdout: true)
+    Mix.shell.info(result)
     :ok
   end
 end
@@ -46,6 +46,8 @@ defmodule ExPassword.Argon2.MixProject do
       else
         {:expassword_algorithm, ">= 0.0.0"}
       end,
+      {:earmark, "~> 1.4", only: :dev},
+      {:ex_doc, "~> 0.22", only: :dev},
     ]
   end
 end
