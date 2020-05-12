@@ -29,10 +29,10 @@ defmodule ExPassword.Argon2 do
 
   An `ArgumentError` will be raised if one of the options above is invalid or if an internal error occurs.
   """
-  # NOTE: salt and version options are voluntarily not documented
+  # NOTE: version option is voluntarily not documented
   @impl ExPassword.Algorithm
   def hash(password, options) do
-    Base.hash_nif(password, Map.get(options, :salt, :crypto.strong_rand_bytes(@default_salt_length)), Map.merge(@default_options, options))
+    Base.hash_nif(password, :crypto.strong_rand_bytes(@default_salt_length), Map.merge(@default_options, options))
   end
 
   @doc ~S"""

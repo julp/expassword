@@ -57,7 +57,7 @@ defmodule ExPassword do
   @doc ~S"""
   TODO
   """
-  @spec hash(algorithm :: algorithm, password :: ExPassword.Algorithm.password, options :: ExPassword.Algorithm.options) :: boolean
+  @spec hash(algorithm :: algorithm, password :: ExPassword.Algorithm.password, options :: ExPassword.Algorithm.options) :: ExPassword.Algorithm.hash | no_return
   def hash(algorithm, password, options \\ %{})
 
   def hash(:default, password, options) do
@@ -73,7 +73,7 @@ defmodule ExPassword do
   @doc ~S"""
   TODO
   """
-  @spec verify?(password :: ExPassword.Algorithm.password, hash :: ExPassword.Algorithm.hash) :: boolean
+  @spec verify?(password :: ExPassword.Algorithm.password, hash :: ExPassword.Algorithm.hash) :: boolean | no_return
   def verify?(password, hash) do
     find_algorithm(hash).verify?(password, hash)
   end
@@ -96,7 +96,7 @@ defmodule ExPassword do
   @doc ~S"""
   TODO
   """
-  @spec get_options(hash :: ExPassword.Algorithm.hash) :: ExPassword.Algorithm.options
+  @spec get_options(hash :: ExPassword.Algorithm.hash) :: {:ok, ExPassword.Algorithm.options} | {:error, :invalid}
   def get_options(hash) do
     module = find_algorithm(hash)
     module.get_options(hash)

@@ -3,7 +3,7 @@ defmodule ExPassword.Argon2.ReferenceTest do
   use Bitwise
 
   defp hashtest(v, t, m, p, password, salt, hexref, mcfref, type) do
-    result = ExPassword.Argon2.hash(password, %{type: type, salt: salt, version: v, memory_cost: 1 <<< m, threads: p, time_cost: t})
+    result = ExPassword.Argon2.Base.hash_nif(password, salt, %{type: type, version: v, memory_cost: 1 <<< m, threads: p, time_cost: t})
     result = if v == 0x10 do
       String.replace(result, "$v=16$", "$")
     else
