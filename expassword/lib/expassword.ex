@@ -99,7 +99,11 @@ defmodule ExPassword do
   @spec get_options(hash :: ExPassword.Algorithm.hash) :: {:ok, ExPassword.Algorithm.options} | {:error, :invalid}
   def get_options(hash) do
     module = find_algorithm(hash)
-    module.get_options(hash)
-    |> Map.put(:provider, module)
+    case module.get_options(hash) do
+      {:ok, options} ->
+        {:ok, Map.put(options, :provider, module)}
+      any ->
+        any
+    end
   end
 end

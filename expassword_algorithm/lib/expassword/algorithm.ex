@@ -25,7 +25,7 @@ defmodule ExPassword.Algorithm do
   @doc ~S"""
   TODO
   """
-  @callback get_options(hash :: hash) :: options
+  @callback get_options(hash :: hash) :: {:ok, options} | {:error, :invalid}
 
   @doc ~S"""
   TODO

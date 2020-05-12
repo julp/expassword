@@ -53,7 +53,7 @@ defmodule ExPassword.Test.SSHA do
   @impl ExPassword.Algorithm
   def get_options(<<@prefix, hash::binary>>) do
     <<_digest::bytes-size(20), salt::binary>> = Base.decode64!(hash)
-    %{@salt_length_option => byte_size(salt), algo: "SSHA"}
+    {:ok, %{@salt_length_option => byte_size(salt), algo: "SSHA"}}
   end
 
   @impl ExPassword.Algorithm

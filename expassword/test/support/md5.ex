@@ -36,7 +36,7 @@ defmodule ExPassword.Test.MD5 do
 
   @impl ExPassword.Algorithm
   def get_options(_hash) do
-    %{algo: "MD5"}
+    {:ok, %{algo: "MD5"}}
   end
 
   @impl ExPassword.Algorithm

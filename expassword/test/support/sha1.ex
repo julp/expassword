@@ -35,7 +35,7 @@ defmodule ExPassword.Test.SHA1 do
 
   @impl ExPassword.Algorithm
   def get_options(_hash) do
-    %{algo: "SHA1"}
+    {:ok, %{algo: "SHA1"}}
   end
 
   @impl ExPassword.Algorithm
