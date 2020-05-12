@@ -2,6 +2,12 @@ defmodule ExPassword.Argon2.ReferenceTest do
   use ExUnit.Case
   use Bitwise
 
+  defp strlen(_x), do: nil # unused
+
+  defp argon2_verify(hash, password, _password_len, _type) do
+    ExPassword.Argon2.verify?(hash, password)
+  end
+
   defp hashtest(v, t, m, p, password, salt, hexref, mcfref, type) do
     result = ExPassword.Argon2.Base.hash_nif(password, salt, %{type: type, version: v, memory_cost: 1 <<< m, threads: p, time_cost: t})
     result = if v == 0x10 do
@@ -13,6 +19,10 @@ defmodule ExPassword.Argon2.ReferenceTest do
     assert ExPassword.Argon2.verify?(mcfref, password)
     assert ExPassword.Argon2.verify?(result, password)
     assert Base.decode64!(Enum.at(String.split(mcfref, "$"), -1), padding: false) == Base.decode16!(hexref, case: :lower)
+  end
+
+  defp argon2_hash(t_cost, m_cost, parallelism, pwd, _pwdlen, salt, _saltlen, type, version) do
+    ExPassword.Argon2.Base.hash_nif(pwd, salt, %{type: type, version: version, memory_cost: 1 <<< m_cost, threads: parallelism, time_cost: t_cost})
   end
 
   test "argon2i with version 0x10" do
@@ -55,6 +65,31 @@ defmodule ExPassword.Argon2.ReferenceTest do
       "$eaEDuQ/orvhXDLMfyLIiWXeJFvgza3vaw4kladTxxJc", :argon2i)
   end
 
+  test "error states tests for argon2i with version 0x10" do
+    # Handle an invalid encoding correctly (it is missing a $)
+    assert_raise ArgumentError, ~R/Decoding failed/i, fn ->
+      argon2_verify("$argon2i$m=65536,t=2,p=1c29tZXNhbHQ" <>
+        "$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ",
+        "password", strlen("password"), :argon2i)
+    end
+    # Handle an invalid encoding correctly (it is missing a $)
+    assert_raise ArgumentError, ~R/Decoding failed/i, fn ->
+      argon2_verify("$argon2i$m=65536,t=2,p=1$c29tZXNhbHQ" <>
+        "9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ",
+        "password", strlen("password"), :argon2i)
+    end
+    # Handle an invalid encoding correctly (salt is too short) */
+    assert_raise ArgumentError, ~R/Salt is too short/i, fn ->
+      argon2_verify("$argon2i$m=65536,t=2,p=1$" <>
+        "$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ",
+        "password", strlen("password"), :argon2i)
+    end
+    # Handle an mismatching hash (the encoded password is "passwore") */
+    refute argon2_verify("$argon2i$m=65536,t=2,p=1$c29tZXNhbHQ" <>
+      "$b2G3seW+uPzerwQQC+/E1K50CLLO7YXy0JRcaTuswRo",
+      "password", strlen("password"), :argon2i)
+  end
+
   test "argon2i with version 0x13" do
     version = 0x13
     hashtest(version, 2, 16, 1, "password", "somesalt",
@@ -95,6 +130,31 @@ defmodule ExPassword.Argon2.ReferenceTest do
       "$sDV8zPvvkfOGCw26RHsjSMvv7K2vmQq/6cxAcmxSEnE", :argon2i)
   end
 
+  test "error states tests for argon2i with version 0x13" do
+    # Handle an invalid encoding correctly (it is missing a $)
+    assert_raise ArgumentError, ~R/Decoding failed/i, fn ->
+      argon2_verify("$argon2i$v=19$m=65536,t=2,p=1c29tZXNhbHQ" <>
+        "$wWKIMhR9lyDFvRz9YTZweHKfbftvj+qf+YFY4NeBbtA",
+        "password", strlen("password"), :argon2i)
+    end
+    # Handle an invalid encoding correctly (it is missing a $)
+    assert_raise ArgumentError, ~R/Decoding failed/i, fn ->
+      argon2_verify("$argon2i$v=19$m=65536,t=2,p=1$c29tZXNhbHQ" <>
+        "wWKIMhR9lyDFvRz9YTZweHKfbftvj+qf+YFY4NeBbtA",
+        "password", strlen("password"), :argon2i)
+    end
+    # Handle an invalid encoding correctly (salt is too short) */
+    assert_raise ArgumentError, ~R/Salt is too short/i, fn ->
+      argon2_verify("$argon2i$v=19$m=65536,t=2,p=1$" <>
+        "$9sTbSlTio3Biev89thdrlKKiCaYsjjYVJxGAL3swxpQ",
+        "password", strlen("password"), :argon2i)
+    end
+    # Handle an mismatching hash (the encoded password is "passwore")
+    refute argon2_verify("$argon2i$v=19$m=65536,t=2,p=1$c29tZXNhbHQ" <>
+      "$8iIuixkI73Js3G1uMbezQXD0b8LG4SXGsOwoQkdAQIM",
+      "password", strlen("password"), :argon2i)
+  end
+
   test "argon2id with version 0x13" do
     version = 0x13
     hashtest(version, 2, 16, 1, "password", "somesalt",
@@ -129,5 +189,18 @@ defmodule ExPassword.Argon2.ReferenceTest do
       "bdf32b05ccc42eb15d58fd19b1f856b113da1e9a5874fdcc544308565aa8141c",
       "$argon2id$v=19$m=65536,t=2,p=1$ZGlmZnNhbHQ" <>
       "$vfMrBczELrFdWP0ZsfhWsRPaHppYdP3MVEMIVlqoFBw", :argon2id)
+  end
+
+  test "Common error state tests" do
+    version = 0x13
+    assert_raise ArgumentError, ~R/emory cost is too small/i, fn ->
+      argon2_hash(2, 1, 1, "password", strlen("password"),
+        "diffsalt", strlen("diffsalt"),
+        :argon2id, version)
+    end
+    assert_raise ArgumentError, ~R/Salt is too short/i, fn ->
+      argon2_hash(2, 1 <<< 12, 1, "password", strlen("password"), "s", 1,
+        :argon2id, version)
+    end
   end
 end
