@@ -1,4 +1,4 @@
-def ExPassword.UnidentifiedAlgorithmError do
+defmodule ExPassword.UnidentifiedAlgorithmError do
   @moduledoc """
   Exception raised when no suitable algorithm were found from a hash
   """
