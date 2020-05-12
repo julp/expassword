@@ -28,7 +28,7 @@ defmodule ExPassword.MixProject do
       if :inet.gethostname() == {:ok, 'freebsd'} do
         {:expassword_algorithm, path: "~/elixir/expassword/expassword_algorithm"}
       else
-        {:expassword_algorithm, ">= 0.0.0"}
+        {:expassword_algorithm, "~> 0.1.0"}
       end,
       if :inet.gethostname() == {:ok, 'freebsd'} do
         {:bcrypt_elixir, path: "~/elixir/bcrypt_elixir", optional: true}
@@ -38,10 +38,11 @@ defmodule ExPassword.MixProject do
       if :inet.gethostname() == {:ok, 'freebsd'} do
         {:expassword_argon2, path: "~/elixir/expassword/expassword_argon2", optional: true}
       else
-        {:expassword_argon2, ">= 0.0.0"}
+        {:expassword_argon2, "~> 0.1.0"}
       end,
       {:earmark, "~> 1.4", only: :dev},
       {:ex_doc, "~> 0.22", only: :dev},
+      {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
     ]
   end
 end

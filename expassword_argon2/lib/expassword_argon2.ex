@@ -21,7 +21,7 @@ defmodule ExPassword.Argon2 do
   Valid options are:
 
     * threads (also called parallelism): number of threads to use for computing the Argon2 hash
-    * time_cost (in seconds): mMaximum amount of time it may take to compute the Argon2 hash
+    * time_cost (in seconds): maximum amount of time it may take to compute the Argon2 hash
     * memory_cost (in kibibytes): maximum amount of memory that may be used to compute the Argon2 hash
     * type:
       + `:argon2i`: use the Argon2i hashing algorithm

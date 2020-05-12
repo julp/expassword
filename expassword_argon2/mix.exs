@@ -44,10 +44,11 @@ defmodule ExPassword.Argon2.MixProject do
       if :inet.gethostname() == {:ok, 'freebsd'} do
         {:expassword_algorithm, path: "~/elixir/expassword/expassword_algorithm"}
       else
-        {:expassword_algorithm, ">= 0.0.0"}
+        {:expassword_algorithm, "~> 0.1.0"}
       end,
       {:earmark, "~> 1.4", only: :dev},
       {:ex_doc, "~> 0.22", only: :dev},
+      {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
     ]
   end
 end
