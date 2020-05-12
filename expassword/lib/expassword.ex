@@ -75,7 +75,12 @@ defmodule ExPassword do
   """
   @spec verify?(password :: ExPassword.Algorithm.password, hash :: ExPassword.Algorithm.hash) :: boolean | no_return
   def verify?(password, hash) do
-    find_algorithm(hash).verify?(password, hash)
+    case find_algorithm(hash) do
+      nil ->
+        raise ExPassword.UnidentifiedAlgorithmError, hash: hash
+      algorithm ->
+        algorithm.verify?(password, hash)
+    end
   end
 
   @doc ~S"""

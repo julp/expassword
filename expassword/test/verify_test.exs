@@ -12,7 +12,9 @@ defmodule ExPassword.VerifyTest do
     end
 
     test "check unknown hashing method and/or invalid hash" do
-      assert ExPassword.verify?("secret", "not a hash")
+      assert_raise ExPassword.UnidentifiedAlgorithmError, ~R/No suitable algorithm/i, fn ->
+        ExPassword.verify?("secret", "not a hash")
+      end
     end
   end
 end
