@@ -5,7 +5,7 @@ defmodule ExPassword.Argon2.ReferenceTest do
   defp strlen(_x), do: nil # unused
 
   defp argon2_verify(hash, password, _password_len, _type) do
-    ExPassword.Argon2.verify?(hash, password)
+    ExPassword.Argon2.verify?(password, hash)
   end
 
   defp hashtest(v, t, m, p, password, salt, hexref, mcfref, type) do
@@ -16,8 +16,8 @@ defmodule ExPassword.Argon2.ReferenceTest do
       result
     end
     assert mcfref == result
-    assert ExPassword.Argon2.verify?(mcfref, password)
-    assert ExPassword.Argon2.verify?(result, password)
+    assert ExPassword.Argon2.verify?(password, mcfref)
+    assert ExPassword.Argon2.verify?(password, result)
     assert Base.decode64!(Enum.at(String.split(mcfref, "$"), -1), padding: false) == Base.decode16!(hexref, case: :lower)
   end
 

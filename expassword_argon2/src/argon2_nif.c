@@ -245,8 +245,8 @@ static ERL_NIF_TERM expassword_argon2_verify_nif(ErlNifEnv *env, int argc, const
 
     if (
         2 == argc
-        && enif_inspect_binary(env, argv[0], &hash)
-        && enif_inspect_binary(env, argv[1], &password)
+        && enif_inspect_binary(env, argv[0], &password)
+        && enif_inspect_binary(env, argv[1], &hash)
         && argon2_valid_hash(&hash, &type)
     ) {
         argon2_error_codes status;
