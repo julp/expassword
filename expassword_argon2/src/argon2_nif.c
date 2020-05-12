@@ -355,7 +355,7 @@ static ErlNifFunc expassword_argon2_nif_funcs[] =
     {"valid_nif", 1, expassword_argon2_valid_nif, 0},
 };
 
-static int expassword_argon2_nif_load(ErlNifEnv *env, void **priv_data, ERL_NIF_TERM UNUSED(load_info))
+static int expassword_argon2_nif_load(ErlNifEnv *env, void **UNUSED(priv_data), ERL_NIF_TERM UNUSED(load_info))
 {
 #define ATOM(x) \
     atom_##x = enif_make_atom_len(env, #x, STR_LEN(#x));
