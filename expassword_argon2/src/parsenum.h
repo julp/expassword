@@ -18,10 +18,10 @@ typedef enum {
     ParseNumError strto## type(const char *, char **, int, type *, type *, type *); \
     ParseNumError strnto## type(const char *, const char * const, char **, int, type *, type *, type *)
 
-parse_signed(int8_t, uint8_t, INT8_MIN, INT8_MAX);
-parse_signed(int16_t, uint16_t, INT16_MIN, INT16_MAX);
-parse_signed(int32_t, uint32_t, INT32_MIN, INT32_MAX);
-parse_signed(int64_t, uint64_t, INT64_MIN, INT64_MAX);
+// parse_signed(int8_t, uint8_t, INT8_MIN, INT8_MAX);
+// parse_signed(int16_t, uint16_t, INT16_MIN, INT16_MAX);
+// parse_signed(int32_t, uint32_t, INT32_MIN, INT32_MAX);
+// parse_signed(int64_t, uint64_t, INT64_MIN, INT64_MAX);
 
 #undef parse_signed
 
@@ -29,9 +29,9 @@ parse_signed(int64_t, uint64_t, INT64_MIN, INT64_MAX);
     ParseNumError strto## type(const char *, char **, int, type *, type *, type *); \
     ParseNumError strnto## type(const char *, const char * const, char **, int, type *, type *, type *)
 
-parse_unsigned(uint8_t, UINT8_MAX);
-parse_unsigned(uint16_t, UINT16_MAX);
+// parse_unsigned(uint8_t, UINT8_MAX);
+// parse_unsigned(uint16_t, UINT16_MAX);
 parse_unsigned(uint32_t, UINT32_MAX);
-parse_unsigned(uint64_t, UINT64_MAX);
+// parse_unsigned(uint64_t, UINT64_MAX);
 
 #undef parse_unsigned
