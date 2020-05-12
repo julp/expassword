@@ -4,9 +4,12 @@ defmodule ExPassword.Argon2.Base do
   @compile {:autoload, false}
   @on_load :load_nifs
 
-  @doc false
   def load_nifs do
-    case :erlang.load_nif('priv/argon2_nif', 0) do
+    :expassword_argon2
+    |> :code.priv_dir()
+    |> :filename.join('argon2_nif')
+    |> :erlang.load_nif(0)
+    |> case do
       :ok ->
         :ok
       _ ->
