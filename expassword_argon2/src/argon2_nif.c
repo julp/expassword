@@ -241,7 +241,7 @@ static ERL_NIF_TERM expassword_argon2_verify_nif(ErlNifEnv *env, int argc, const
 {
     argon2_type type;
     ERL_NIF_TERM output;
-    ErlNifBinary hash, password;
+    ErlNifBinary password, hash;
 
     if (
         2 == argc
