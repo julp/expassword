@@ -83,10 +83,12 @@
 #define BCRYPT_PREFIX "$2*$"
 #define BCRYPT_MAXLOGROUNDS 31
 
-#define ATOM(x) \
+#ifndef TEST
+# define ATOM(x) \
     static ERL_NIF_TERM atom_##x;
-#include "atoms.h"
-#undef ATOM
+# include "atoms.h"
+# undef ATOM
+#endif /* !TEST */
 
 /* <default values> */
 #define DEFAULT_BCRYPT_COST 10
@@ -208,6 +210,7 @@ static bool bcrypt_valid_hash(const ErlNifBinary *hash)
     ;
 }
 
+#ifndef TEST
 static bool extract_options_from_erlang_map(ErlNifEnv *env, ERL_NIF_TERM map, int *cost)
 {
     ERL_NIF_TERM value;
@@ -220,6 +223,7 @@ static bool extract_options_from_erlang_map(ErlNifEnv *env, ERL_NIF_TERM map, in
 
     return *cost >= BCRYPT_MINLOGROUNDS && *cost <= BCRYPT_MAXLOGROUNDS;
 }
+#endif /* !TEST */
 
 #ifndef TEST
 static
@@ -307,8 +311,8 @@ bool bcrypt_hash(
     {
         const uint8_t *c;
 
-        printf("PASSWORD : >%.*s< (%d)\n", password_end - password, password, password_end - password);
-        printf("SALT : >%.*s< (%d)\n", raw_salt_end - raw_salt, raw_salt, raw_salt_end - raw_salt);
+        printf("PASSWORD : >%.*s< (%ld)\n", (int) (password_end - password), password, password_end - password);
+        printf("SALT : >%.*s< (%ld)\n", (int) (raw_salt_end - raw_salt), raw_salt, raw_salt_end - raw_salt);
         for (c = raw_salt; c < raw_salt_end; c++) {
             printf("0x%02" PRIX8, *c);
         }
@@ -359,7 +363,7 @@ bool bcrypt_hash(
 //     explicit_bzero(&state, sizeof(state));
 //     explicit_bzero(ciphertext, sizeof(ciphertext));
 //     explicit_bzero(cdata, sizeof(cdata));
-    printf("H = >%.*s<\n", hash_end - hash, hash);
+    printf("H = >%.*s<\n", (int) (hash_end - hash), hash);
 
     return true;
 }
