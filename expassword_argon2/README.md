@@ -5,7 +5,7 @@ This module add support for Argon2 to ExPassword
 ## Prerequisites
 
 * libargon2 installed
-* a C compiler
+* a C99 compiler
 * CMake
 
 ## Installation

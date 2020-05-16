@@ -33,6 +33,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 /* Schneier specifies a maximum key length of 56 bytes.
  * This ensures that every key bit affects every cipher
  * bit.  However, the subkeys can hold up to 72 bytes.

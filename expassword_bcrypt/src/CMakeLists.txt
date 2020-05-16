@@ -43,7 +43,6 @@ if(NOT DEFINED ENV{MIX_ENV} OR ENV{MIX_ENV} EQUAL "dev")
         blowfish.c
     )
     set_target_properties(test PROPERTIES
-        #COMPILE_FLAGS "-g" # "-fno-omit-frame-pointer -static"
-        COMPILE_DEFINITIONS "TEST"
+        COMPILE_DEFINITIONS "STANDALONE"
     )
 endif(NOT DEFINED ENV{MIX_ENV} OR ENV{MIX_ENV} EQUAL "dev")

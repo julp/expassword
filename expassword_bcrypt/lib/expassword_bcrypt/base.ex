@@ -34,4 +34,10 @@ defmodule ExPassword.Bcrypt.Base do
 
   def valid_nif(hash)
   def valid_nif(_hash), do: :erlang.nif_error(:not_loaded)
+
+  def encode_base64_nif(data)
+  def encode_base64_nif(_data), do: :erlang.nif_error(:not_loaded)
+
+  def decode_base64_nif(data)
+  def decode_base64_nif(_data), do: :erlang.nif_error(:not_loaded)
 end
