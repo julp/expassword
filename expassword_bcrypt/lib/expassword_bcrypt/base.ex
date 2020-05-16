@@ -20,8 +20,11 @@ defmodule ExPassword.Bcrypt.Base do
     end
   end
 
-  def hash_nif(password, salt, options)
-  def hash_nif(_password, _salt, _options), do: :erlang.nif_error(:not_loaded)
+  def generate_salt_nif(salt, options)
+  def generate_salt_nif(_salt, _options), do: :erlang.nif_error(:not_loaded)
+
+  def hash_nif(password, salt)
+  def hash_nif(_password, _salt), do: :erlang.nif_error(:not_loaded)
 
   def verify_nif(hash, password)
   def verify_nif(_hash, _password), do: :erlang.nif_error(:not_loaded)
@@ -35,9 +38,11 @@ defmodule ExPassword.Bcrypt.Base do
   def valid_nif(hash)
   def valid_nif(_hash), do: :erlang.nif_error(:not_loaded)
 
-  def encode_base64_nif(data)
-  def encode_base64_nif(_data), do: :erlang.nif_error(:not_loaded)
+  if false do
+    def encode_base64_nif(data)
+    def encode_base64_nif(_data), do: :erlang.nif_error(:not_loaded)
 
-  def decode_base64_nif(data)
-  def decode_base64_nif(_data), do: :erlang.nif_error(:not_loaded)
+    def decode_base64_nif(data)
+    def decode_base64_nif(_data), do: :erlang.nif_error(:not_loaded)
+  end
 end

@@ -1,6 +1,6 @@
 defmodule Mix.Tasks.Compile.Cmake do
   def run(_) do
-    {result, 0} = System.cmd("cmake", [".", "-Wno-dev"], stderr_to_stdout: true)
+    {result, 0} = System.cmd("cmake", [".", "-Wno-dev"], stderr_to_stdout: true, env: [{"MIX_ENV", to_string(Mix.env())}])
     Mix.shell.info(result)
     {result, 0} = System.cmd("make", ["all"], stderr_to_stdout: true)
     Mix.shell.info(result)

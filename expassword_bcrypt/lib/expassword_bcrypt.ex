@@ -10,7 +10,7 @@ defmodule ExPassword.Bcrypt do
 
   alias ExPassword.Bcrypt.Base
 
-  @default_salt_length 22
+  @default_salt_length 16
   @default_options Enum.into(Application.get_all_env(:expassword_bcrypt), %{})
 
   @doc """
@@ -26,7 +26,8 @@ defmodule ExPassword.Bcrypt do
   # NOTE: version option is voluntarily not documented
   @impl ExPassword.Algorithm
   def hash(password, options) do
-    Base.hash_nif(password, :crypto.strong_rand_bytes(@default_salt_length), Map.merge(@default_options, options))
+    salt = Base.generate_hash_nif(:crypto.strong_rand_bytes(@default_salt_length), Map.merge(@default_options, options))
+    Base.hash_nif(password, salt)
   end
 
   @doc ~S"""

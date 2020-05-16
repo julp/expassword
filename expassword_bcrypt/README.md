@@ -2,6 +2,11 @@
 
 This module add support for Bcrypt to ExPassword
 
+## Credits
+
+* OpenBSD for C implementation
+* openwall for tests
+
 ## Prerequisites
 
 * a C99 compiler

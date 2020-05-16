@@ -28,6 +28,7 @@ add_library(
     bcrypt_nif SHARED
     bcrypt_nif.c
     blowfish.c
+    timingsafe_bcmp.c
 )
 set_target_properties(bcrypt_nif PROPERTIES
     PREFIX ""
