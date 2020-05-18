@@ -18,6 +18,17 @@ find_path(NIF_INCLUDE_DIR "erl_nif.h"
     PATH_SUFFIXES "/usr/include/"
 )
 
+set(OPTIONAL_SOURCES )
+include(CheckFunctionExists)
+check_function_exists("explicit_bzero" HAVE_EXPLICIT_BZERO)
+if(NOT HAVE_EXPLICIT_BZERO)
+    #list(APPEND OPTIONAL_SOURCES explicit_bzero.c)
+endif(NOT HAVE_EXPLICIT_BZERO)
+check_function_exists("timingsafe_bcmp" HAVE_TIMINGSAFE_BCMP)
+# if(NOT HAVE_TIMINGSAFE_BCMP)
+    list(APPEND OPTIONAL_SOURCES timingsafe_bcmp.c)
+# endif(NOT HAVE_TIMINGSAFE_BCMP)
+
 include_directories(
     ${PROJECT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -28,7 +39,7 @@ add_library(
     bcrypt_nif SHARED
     bcrypt_nif.c
     blowfish.c
-    timingsafe_bcmp.c
+    ${OPTIONAL_SOURCES}
 )
 set_target_properties(bcrypt_nif PROPERTIES
     PREFIX ""
@@ -42,6 +53,7 @@ if(NOT DEFINED ENV{MIX_ENV} OR ENV{MIX_ENV} EQUAL "dev")
         test.c
         bcrypt_nif.c
         blowfish.c
+        ${OPTIONAL_SOURCES}
     )
     set_target_properties(test PROPERTIES
         COMPILE_DEFINITIONS "STANDALONE"
