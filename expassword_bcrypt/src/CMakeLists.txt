@@ -22,12 +22,12 @@ set(OPTIONAL_SOURCES )
 include(CheckFunctionExists)
 check_function_exists("explicit_bzero" HAVE_EXPLICIT_BZERO)
 if(NOT HAVE_EXPLICIT_BZERO)
-    #list(APPEND OPTIONAL_SOURCES explicit_bzero.c)
+    list(APPEND OPTIONAL_SOURCES explicit_bzero.c)
 endif(NOT HAVE_EXPLICIT_BZERO)
 check_function_exists("timingsafe_bcmp" HAVE_TIMINGSAFE_BCMP)
-# if(NOT HAVE_TIMINGSAFE_BCMP)
+if(NOT HAVE_TIMINGSAFE_BCMP)
     list(APPEND OPTIONAL_SOURCES timingsafe_bcmp.c)
-# endif(NOT HAVE_TIMINGSAFE_BCMP)
+endif(NOT HAVE_TIMINGSAFE_BCMP)
 
 include_directories(
     ${PROJECT_SOURCE_DIR}
@@ -47,7 +47,7 @@ set_target_properties(bcrypt_nif PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../priv"
 )
 
-if(NOT DEFINED ENV{MIX_ENV} OR ENV{MIX_ENV} EQUAL "dev")
+if((NOT DEFINED ENV{MIX_ENV}) OR ($ENV{MIX_ENV} STREQUAL "dev"))
     add_executable(
         test
         test.c
@@ -58,4 +58,4 @@ if(NOT DEFINED ENV{MIX_ENV} OR ENV{MIX_ENV} EQUAL "dev")
     set_target_properties(test PROPERTIES
         COMPILE_DEFINITIONS "STANDALONE"
     )
-endif(NOT DEFINED ENV{MIX_ENV} OR ENV{MIX_ENV} EQUAL "dev")
+endif((NOT DEFINED ENV{MIX_ENV}) OR ($ENV{MIX_ENV} STREQUAL "dev"))
