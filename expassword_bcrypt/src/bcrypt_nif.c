@@ -147,11 +147,15 @@ static uint8_t *encode_base64(const uint8_t *data, const uint8_t * const data_en
     return w;
 }
 
-static uint8_t *decode_base64(const uint8_t *data, const uint8_t * const data_end, uint8_t *buffer, const uint8_t * const buffer_end)
+#ifndef STANDALONE
+static
+#endif /* !STANDALONE */
+uint8_t *decode_base64(const uint8_t *data, const uint8_t * const data_end, uint8_t *buffer, const uint8_t * const buffer_end)
 {
     uint8_t *w = buffer;
-    uint8_t c1, c2, c3, c4;
     const uint8_t *r = data;
+#if 0
+    uint8_t c1, c2, c3, c4;
 
     while (w < buffer_end) {
         c1 = index_64[r[0]];
@@ -182,6 +186,39 @@ static uint8_t *decode_base64(const uint8_t *data, const uint8_t * const data_en
         *w++ = ((c3 & 0x03) << 6) | c4;
         r += 4;
     }
+#else
+    size_t i;
+    uint8_t c;
+
+    i = 0;
+    while (r < data_end && w < buffer_end) {
+        if (0xFF == (c = index_64[*r++])) {
+            // invalid character found
+            return NULL;
+        }
+        switch (i & 0b11) {
+            case 0b00:
+                *w = c << 2;
+                break;
+            case 0b01:
+                *w++ |= c >> 4;
+                *w = (c & 0x0F) << 4;
+                break;
+            case 0b10:
+                *w++ |= c >> 2;
+                *w = (c & 0x03) << 6;
+                break;
+            case 0b11:
+                *w++ |= c;
+                break;
+        }
+        i++;
+    }
+    if (r < data_end && w >= buffer_end) {
+        // buffer is too small to fully convert data
+        return NULL;
+    }
+#endif
 
     return w;
 }
