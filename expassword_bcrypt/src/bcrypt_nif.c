@@ -76,7 +76,8 @@
 #define BCRYPT_WORDS 6		/* Ciphertext words */
 #define BCRYPT_MINLOGROUNDS 4	/* we have log2(rounds) in salt */
 
-#define	BCRYPT_SALTSPACE	(STR_LEN("$vm$cc$") + (BCRYPT_MAXSALT * 4 + 2) / 3 + 1)
+// NOTE: "+ 1" is commented because we don't count the \0
+#define	BCRYPT_SALTSPACE	(STR_LEN("$vm$cc$") + (BCRYPT_MAXSALT * 4 + 2) / 3/* + 1*/)
 #define	BCRYPT_HASHSPACE	61
 
 #define BCRYPT_PREFIX "$2*$"
@@ -152,43 +153,10 @@ EXPORT_IF_STANDALONE uint8_t *encode_base64(const uint8_t *data, const uint8_t *
 
 EXPORT_IF_STANDALONE uint8_t *decode_base64(const uint8_t *data, const uint8_t * const data_end, uint8_t *buffer, const uint8_t * const buffer_end)
 {
-    uint8_t *w = buffer;
-    const uint8_t *r = data;
-#if 0
-    uint8_t c1, c2, c3, c4;
-
-    while (w < buffer_end) {
-        c1 = index_64[r[0]];
-        /* Invalid data */
-        if (0xFF == c1) {
-            return NULL;
-        }
-        c2 = index_64[r[1]];
-        if (0xFF == c2) {
-            return NULL;
-        }
-        *w++ = (c1 << 2) | ((c2 & 0x30) >> 4);
-        if (w >= buffer_end) {
-            break;
-        }
-        c3 = index_64[r[2]];
-        if (0xFF == c3) {
-            return NULL;
-        }
-        *w++ = ((c2 & 0x0F) << 4) | ((c3 & 0x3C) >> 2);
-        if (w >= buffer_end) {
-            break;
-        }
-        c4 = index_64[r[3]];
-        if (0xFF == c4) {
-            return NULL;
-        }
-        *w++ = ((c3 & 0x03) << 6) | c4;
-        r += 4;
-    }
-#else
     size_t i;
     uint8_t c;
+    uint8_t *w = buffer;
+    const uint8_t *r = data;
 
     i = 0;
     while (r < data_end && w < buffer_end) {
@@ -218,14 +186,13 @@ EXPORT_IF_STANDALONE uint8_t *decode_base64(const uint8_t *data, const uint8_t *
         // buffer is too small to fully convert data
         return NULL;
     }
-#endif
 
     return w;
 }
 
 static uint8_t *write_prefix(uint8_t *buffer, const uint8_t * const buffer_end, int minor, int cost)
 {
-#if 1
+#if 0
     int written;
 
     written = snprintf((char *) buffer, buffer_end - buffer, "$%c%c$%2.2u$", BCRYPT_VERSION, minor, cost);
@@ -235,7 +202,7 @@ static uint8_t *write_prefix(uint8_t *buffer, const uint8_t * const buffer_end, 
         return buffer + written;
     }
 #else
-    if ((buffer_end - buffer_size) < STR_LEN("$vm$cc$")) {
+    if (buffer > buffer_end || ((size_t) (buffer_end - buffer)) < STR_LEN("$vm$cc$")) {
         return NULL;
     }
 
@@ -251,7 +218,7 @@ static uint8_t *write_prefix(uint8_t *buffer, const uint8_t * const buffer_end, 
 #endif
 }
 
-static bool bcrypt_valid_hash(const ErlNifBinary *hash)
+EXPORT_IF_STANDALONE bool bcrypt_valid_hash(const ErlNifBinary *hash)
 {
     return
            hash->size == (BCRYPT_HASHSPACE - 1)
@@ -282,11 +249,12 @@ EXPORT_IF_STANDALONE uint8_t *bcrypt_init_salt(int cost, const uint8_t *raw_salt
     uint8_t *w;
 
 #if 0
+    // TODO: we need that
     if ((buffer_end - buffer) < BCRYPT_SALTSPACE) {
         return NULL;
     }
 #endif
-    if ((raw_salt_end - raw_salt) < BCRYPT_MAXSALT) {
+    if (raw_salt > raw_salt_end || ((size_t) (raw_salt_end - raw_salt)) < BCRYPT_MAXSALT) {
         // salt is too short
         return NULL;
     }
@@ -309,12 +277,13 @@ EXPORT_IF_STANDALONE uint8_t *bcrypt_init_salt(int cost, const uint8_t *raw_salt
 
 // salt here means prefix "$vm$cc$" + base64 encoded salt
 // raw_salt is the real unencoded (base64) hash
-EXPORT_IF_STANDALONE uint8_t *bcrypt_full_parse_hash(const uint8_t *salt, const uint8_t *salt_end, int *minor, int *cost, uint8_t *raw_salt, const uint8_t * const raw_salt_end)
+EXPORT_IF_STANDALONE const uint8_t *bcrypt_full_parse_hash(const uint8_t *salt, const uint8_t *salt_end, int *minor, int *cost, uint8_t *raw_salt, const uint8_t * const raw_salt_end)
 {
-    uint8_t *r, d1, d2;
+    uint8_t d1, d2;
+    const uint8_t *r;
 
     r = salt;
-    if ((salt_end - salt) < BCRYPT_SALTSPACE) {
+    if (salt > salt_end || ((size_t) (salt_end - salt)) < BCRYPT_SALTSPACE) {
         return NULL;
     }
     if ('$' != *r++) {
@@ -340,14 +309,14 @@ EXPORT_IF_STANDALONE uint8_t *bcrypt_full_parse_hash(const uint8_t *salt, const 
     if ('$' != *r++) {
         return NULL;
     }
-    if (NULL == (r = decode_base64(r, r + 22 /* TODO */, raw_salt, raw_salt_end))) {
+    if (NULL == (r = decode_base64(r, salt + BCRYPT_SALTSPACE, raw_salt, raw_salt_end))) {
         return NULL;
     }
 
     return r;
 }
 
-static bool bcrypt_parse_hash(const ErlNifBinary *hash, int *cost)
+EXPORT_IF_STANDALONE bool bcrypt_parse_hash(const ErlNifBinary *hash, int *cost)
 {
     // NOTE: length is checked before by a call to bcrypt_valid_hash
     unsigned const char * const r = hash->data + STR_LEN(BCRYPT_PREFIX);
@@ -509,7 +478,7 @@ static ERL_NIF_TERM expassword_bcrypt_hash_nif(ErlNifEnv *env, int argc, const E
                 memcpy(buffer, hash, STR_SIZE(hash));
             }
         } else {
-            output = atom_false; // TODO
+            output = atom_false; // TODO: raise?
         }
 //         explicit_bzero(hash, sizeof(hash));
         explicit_bzero(password0, sizeof(password0));

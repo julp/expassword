@@ -47,7 +47,8 @@ set_target_properties(bcrypt_nif PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../priv"
 )
 
-if((NOT DEFINED ENV{MIX_ENV}) OR ($ENV{MIX_ENV} STREQUAL "dev"))
+#if((NOT DEFINED ENV{MIX_ENV}) OR ($ENV{MIX_ENV} STREQUAL "dev"))
+if(NOT $ENV{MIX_ENV} STREQUAL "prod")
     add_executable(
         test
         test.c
@@ -58,4 +59,4 @@ if((NOT DEFINED ENV{MIX_ENV}) OR ($ENV{MIX_ENV} STREQUAL "dev"))
     set_target_properties(test PROPERTIES
         COMPILE_DEFINITIONS "STANDALONE"
     )
-endif((NOT DEFINED ENV{MIX_ENV}) OR ($ENV{MIX_ENV} STREQUAL "dev"))
+endif(NOT $ENV{MIX_ENV} STREQUAL "prod")
