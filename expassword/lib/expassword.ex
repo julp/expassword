@@ -25,7 +25,9 @@ defmodule ExPassword do
     |> Enum.find(nil, &(&1.valid?(hash)))
   end
 
-  @doc false
+  @doc ~S"""
+  TODO
+  """
   def available_algorithms do
     @available_algorithms
   end
