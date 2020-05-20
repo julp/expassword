@@ -87,6 +87,9 @@
     static ERL_NIF_TERM atom_##x;
 # include "atoms.h"
 # undef ATOM
+# define EXPORT_IF_STANDALONE static
+#else
+# define EXPORT_IF_STANDALONE /* NOP */
 #endif /* !STANDALONE */
 
 /* <default values> */
@@ -116,7 +119,7 @@ static const uint8_t index_64[] = {
     /* F */ 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
 };
 
-static uint8_t *encode_base64(const uint8_t *data, const uint8_t * const data_end, uint8_t *buffer, const uint8_t * const buffer_end)
+EXPORT_IF_STANDALONE uint8_t *encode_base64(const uint8_t *data, const uint8_t * const data_end, uint8_t *buffer, const uint8_t * const buffer_end)
 {
     uint8_t c1, c2;
     uint8_t *w = buffer;
@@ -147,10 +150,7 @@ static uint8_t *encode_base64(const uint8_t *data, const uint8_t * const data_en
     return w;
 }
 
-#ifndef STANDALONE
-static
-#endif /* !STANDALONE */
-uint8_t *decode_base64(const uint8_t *data, const uint8_t * const data_end, uint8_t *buffer, const uint8_t * const buffer_end)
+EXPORT_IF_STANDALONE uint8_t *decode_base64(const uint8_t *data, const uint8_t * const data_end, uint8_t *buffer, const uint8_t * const buffer_end)
 {
     uint8_t *w = buffer;
     const uint8_t *r = data;
@@ -277,10 +277,7 @@ static bool extract_options_from_erlang_map(ErlNifEnv *env, ERL_NIF_TERM map, in
 }
 #endif /* !STANDALONE */
 
-#ifndef STANDALONE
-static
-#endif /* !STANDALONE */
-uint8_t *bcrypt_init_salt(int cost, const uint8_t *raw_salt, const uint8_t * const raw_salt_end, uint8_t *buffer, const uint8_t * const buffer_end)
+EXPORT_IF_STANDALONE uint8_t *bcrypt_init_salt(int cost, const uint8_t *raw_salt, const uint8_t * const raw_salt_end, uint8_t *buffer, const uint8_t * const buffer_end)
 {
     uint8_t *w;
 
@@ -310,12 +307,9 @@ uint8_t *bcrypt_init_salt(int cost, const uint8_t *raw_salt, const uint8_t * con
     return w;
 }
 
-#ifndef STANDALONE
-static
-#endif /* !STANDALONE */
 // salt here means prefix "$vm$cc$" + base64 encoded salt
 // raw_salt is the real unencoded (base64) hash
-uint8_t *bcrypt_full_parse_hash(const uint8_t *salt, const uint8_t *salt_end, int *minor, int *cost, uint8_t *raw_salt, const uint8_t * const raw_salt_end)
+EXPORT_IF_STANDALONE uint8_t *bcrypt_full_parse_hash(const uint8_t *salt, const uint8_t *salt_end, int *minor, int *cost, uint8_t *raw_salt, const uint8_t * const raw_salt_end)
 {
     uint8_t *r, d1, d2;
 
@@ -367,10 +361,7 @@ static bool bcrypt_parse_hash(const ErlNifBinary *hash, int *cost)
     return *cost >= BCRYPT_MINLOGROUNDS && *cost <= BCRYPT_MAXLOGROUNDS;
 }
 
-#ifndef STANDALONE
-static
-#endif /* !STANDALONE */
-bool bcrypt_hash(
+EXPORT_IF_STANDALONE bool bcrypt_hash(
     // WARNING: password have to be null terminated and password_end should be located AFTER it!
     const uint8_t *password, const uint8_t * const password_end,
     // "salt" here means prefix "$vm$cc$" + base64 encoded salt
