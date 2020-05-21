@@ -75,6 +75,24 @@ int main(int argc, char **argv)
 
     /* ==================== base64 decoding ==================== */
 
+    // empty non-null terminated string decoding
+    {
+        uint8_t data[0] = "", buffer[4] = {0}, expected[4] = {0};
+
+        p = decode_base64(data, data + STR_SIZE(data), buffer, buffer + STR_SIZE(buffer));
+        ASSERT(NULL != p, "decode_base64 failed to decode data");
+        ASSERT(p == buffer, "decode_base64 failed to return correct position from the input string");
+        ASSERT(0 == memcmp(buffer, expected, STR_SIZE(expected)), "decode_base64 failed to correctly decode input string");
+    }
+    // empty null terminated string decoding
+    {
+        uint8_t data[] = "", buffer[4] = {0}, expected[4] = {0};
+
+        p = decode_base64(data, data + STR_LEN(data), buffer, buffer + STR_SIZE(buffer));
+        ASSERT(NULL != p, "decode_base64 failed to decode data");
+        ASSERT(p == buffer, "decode_base64 failed to return correct position from the input string");
+        ASSERT(0 == memcmp(buffer, expected, STR_SIZE(expected)), "decode_base64 failed to correctly decode input string");
+    }
     // normal case without any additional space
     {
         uint8_t data[22] = "CCCCCCCCCCCCCCCCCCCCC.", buffer[16], expected[16] = {0x10, 0x41, 0x04, 0x10, 0x41, 0x04, 0x10, 0x41, 0x04, 0x10, 0x41, 0x04, 0x10, 0x41, 0x04, 0x10};
