@@ -1,9 +1,21 @@
 defmodule Mix.Tasks.Compile.Cmake do
+  @valgrind_options ~W[-q --tool=memcheck --trace-children=yes --leak-check=full --track-origins=yes --log-file=/dev/null --error-exitcode=42]
   def run(_) do
     {result, 0} = System.cmd("cmake", [".", "-Wno-dev"], stderr_to_stdout: true, env: [{"MIX_ENV", to_string(Mix.env())}])
     Mix.shell.info(result)
     {result, 0} = System.cmd("make", ["all"], stderr_to_stdout: true)
     Mix.shell.info(result)
+    if Mix.env() == :test do
+      {cmd, args} = try do
+        System.cmd("valgrind", [])
+        {"valgrind", @valgrind_options ++ [Path.expand("src/test")]}
+      rescue
+        _ ->
+          {Path.expand("src/test"), []}
+      end
+      {result, 0} = System.cmd(cmd, args, stderr_to_stdout: true)
+      Mix.shell.info(result)
+    end
     :ok
   end
 end

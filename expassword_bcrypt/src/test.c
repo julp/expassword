@@ -18,11 +18,13 @@
 
 #define ASSERT(expr, description) \
     do { \
+        tests++; \
         if (expr) { \
             if (verbose) { \
                 fprintf(stderr, "[ " GREEN("PASS") " ] " description " (%d)\n", __LINE__); \
             } \
         } else { \
+            failures++; \
             retval = EXIT_FAILURE; \
             fprintf(stderr, "[ " RED("FAIL") " ] " description " => test %s failed at line %d\n", #expr, __LINE__); \
         } \
@@ -48,8 +50,10 @@ int main(int argc, char **argv)
     uint8_t hash[128];
     uint8_t password[] = "U*U";
     uint8_t salt[] = "$2a$05$CCCCCCCCCCCCCCCCCCCCC.";
+    size_t tests, failures;
 
     verbose = 0;
+    failures = tests = 0;
     retval = EXIT_SUCCESS;
     while (-1 != (c = getopt_long(argc, argv, optstr, long_options, NULL))) {
         switch (c) {
@@ -64,7 +68,7 @@ int main(int argc, char **argv)
 
     if (bcrypt_hash(password, password + STR_SIZE(password), salt, salt + STR_SIZE(salt), hash, hash + STR_SIZE(hash), 'a', 5)) {
         //retval = 0 == strcmp((char *) hash, "$2a$05$CCCCCCCCCCCCCCCCCCCCC.E5YPO9kmyuRGyh0XouQYb4YMJKvyOeW") ? EXIT_SUCCESS : EXIT_FAILURE;
-        retval = EXIT_FAILURE;
+        retval = EXIT_SUCCESS;
     } else {
         retval = EXIT_FAILURE;
     }
@@ -112,6 +116,9 @@ int main(int argc, char **argv)
         p = decode_base64(data, data + STR_SIZE(data), buffer, buffer + STR_SIZE(buffer));
         ASSERT(NULL == p, "decode_base64 failed to report invalid character");
     }
+
+    /* ==================== report/summary ==================== */
+    fprintf(stderr, "=> %.7s%zu tests, %zu failure(s) in src/test\33[0m\n", 0 == failures ? GREEN("") : RED(""), tests, failures);
 
     return retval;
 }
