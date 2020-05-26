@@ -54,4 +54,37 @@ defmodule ExPassword.Bcrypt.ReferenceTest do
       end
     )
   end
+
+  test "salt should be shortened to 128 bits" do
+    [
+      {
+        "test",
+        "$2b$10$1234567899123456789012",
+        "$2b$10$123456789912345678901u.OtL1A1eGK5wmvBKUDYKvuVKI7h2XBu"
+      },
+      {
+        "U*U*",
+        "$2a$05$CCCCCCCCCCCCCCCCCCCCCh",
+        "$2a$05$CCCCCCCCCCCCCCCCCCCCCeUQ7VjYZ2hd4bLYZdhuPpZMUpEUJDw1S"
+      },
+      {
+        "U*U*",
+        "$2a$05$CCCCCCCCCCCCCCCCCCCCCM",
+        "$2a$05$CCCCCCCCCCCCCCCCCCCCC.VGOzA784oUp/Z0DY336zx7pLYAy0lwK"
+      },
+      {
+        "U*U*",
+        "$2a$05$CCCCCCCCCCCCCCCCCCCCCA",
+        "$2a$05$CCCCCCCCCCCCCCCCCCCCC.VGOzA784oUp/Z0DY336zx7pLYAy0lwK"
+      }
+    ]
+    |> Enum.each(
+      fn {password, salt, hash} ->
+        result = ExPassword.Bcrypt.Base.hash_nif(password, salt)
+        assert hash == result
+#         assert ExPassword.Bcrypt.Base.verify_nif(password, hash)
+#         assert ExPassword.Bcrypt.Base.verify_nif(password, result)
+      end
+    )
+  end
 end

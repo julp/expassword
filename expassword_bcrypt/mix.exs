@@ -7,7 +7,7 @@ defmodule Mix.Tasks.Compile.Cmake do
     Mix.shell.info(result)
     if Mix.env() == :test do
       {cmd, args} = try do
-        System.cmd("valgrind", [])
+        System.cmd("valgrind", [], stderr_to_stdout: true)
         {"valgrind", @valgrind_options ++ [Path.expand("src/test")]}
       rescue
         _ ->
