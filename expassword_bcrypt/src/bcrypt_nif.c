@@ -92,130 +92,26 @@ static const uint8_t index_64[] = {
 
 EXPORT_IF_STANDALONE uint8_t *encode_base64(const uint8_t *data, const uint8_t * const data_end, uint8_t *buffer, const uint8_t * const buffer_end)
 {
-    uint8_t *w = buffer;
-    const uint8_t *r = data;
-#if 0
-    uint8_t c1, c2;
-
-    while (r < data_end) {
-        c1 = *r++;
-        *w++ = Base64Code[(c1 >> 2)];
-        c1 = (c1 & 0x03) << 4;
-        if (r >= data_end) {
-            *w++ = Base64Code[c1];
-            break;
-        }
-        c2 = *r++;
-        c1 |= (c2 >> 4) & 0x0F;
-        *w++ = Base64Code[c1];
-        c1 = (c2 & 0x0F) << 2;
-        if (r >= data_end) {
-            *w++ = Base64Code[c1];
-            break;
-        }
-        c2 = *r++;
-        c1 |= (c2 >> 6) & 0x03;
-        *w++ = Base64Code[c1];
-        *w++ = Base64Code[c2 & 0x3F];
-    }
-#else
     int state; // the (n + 1)th decoded byte to write into buffer
-    uint8_t rest; // the remaining bytes
+    uint8_t *w;
+    const uint8_t *r;
     int states[] = {1, 2, 3, 0}; // replace a counter and % 4
 
-    rest = 0;
     state = 0;
-    for (w = buffer; w < buffer_end && r < (data_end/* + (0 == state)*/); w++) {
-        int x, y; // x : amount of bits to handle, y : amount of bits to ignore for this round
+    w = buffer;
+    r = data - 1;
+    if (data < data_end) {
+        do {
+            int x, y;
 
-        x = (state + 1) << 1;
-        y = 8 - x;
-        *w = Base64Code[(uint8_t) (*r >> x | rest << y)];
-        state = states[state];
-        if (0 != state) {
-//             r++;
-            rest = *r++ & (0xFF >> y);
-        } else {
-            rest = 0;
-        }
-//         r += 0 != state;
-    }
-//     printf("r = %p, data = %p, data_end = %p\n", r, data, data_end);
-//     printf("w = %p, buffer = %p, buffer_end = %p\n", w, buffer, buffer_end);
-//     printf("state = %d\n", state);
-    if (r < (data_end/* + (0 == state)*/) && w >= buffer_end) {
-        // buffer is too small to fully convert data
-        return NULL;
-    }
-#endif
-
-    return w;
-}
-
-#define max(a,b) \
-    ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
-
-EXPORT_IF_STANDALONE uint8_t *decode_base64(const uint8_t *data, const uint8_t * const data_end, uint8_t *buffer, const uint8_t * const buffer_end)
-{
-    size_t i;
-    uint8_t c;
-    uint8_t *w = buffer;
-    const uint8_t *r = data;
-    int state;
-    int states[] = {1, 2, 0};
-
-    i = 0;
-    state = 0;
-#if 0
-    while (r < data_end && w < buffer_end) {
-        if (0xFF == (c = index_64[*r++])) {
-            // invalid character found
-            return NULL;
-        }
-        switch (i & 0b11) {
-            case 0b00:
-                *w = c << 2;
-                break;
-            case 0b01:
-                *w++ |= c >> 4;
-                *w = (c & 0x0F) << 4;
-                break;
-            case 0b10:
-                *w++ |= c >> 2;
-                *w = (c & 0x03) << 6;
-                break;
-            case 0b11:
-                *w++ |= c;
-                break;
-        }
-        i++;
-#else
-    for (w = buffer, r = data; r < data_end /*&& 0xFF != (c = index_64[*r])*/ && w < buffer_end; w++, r++) {
-        int x, y;
-        uint8_t c1, c2;
-
-        if (0 == state) {
-            ++r;
-        }
-        y = (state + 1) << 1;
-        x = 8 - y;
-//         if (0xFF == index_64[*r]) {
-//             return NULL;
-//         }
-        c1 = index_64[r[-1]];
-        c2 = index_64[r[0]];
-        if (0xFF == (c1 | c2)) {
-            // invalid character found
-            return NULL;
-        }
-        *w/*++*/ = (c1 & (0xFF >> y)) << y | (c2 >> (6 - y));
-        state = states[state];
-//         if (0 == state) {
-//             if (0xFF == index_64[*r++]) {
-//                 return NULL;
-//             }
-//         }
-#endif
+            x = state << 1;
+            y = 6 - x;
+            *w++ = Base64Code[(uint8_t) (0b111111 & ((0 == x ? 0 : (r[0] << y)) | (0 == y || r + 1 >= data_end ? 0 : (r[1] >> (8 - y)))))];
+            state = states[state];
+            if (0 != state) {
+                r++;
+            }
+        } while (w < buffer_end && r < data_end);
     }
     if (r < data_end && w >= buffer_end) {
         // buffer is too small to fully convert data
@@ -225,18 +121,41 @@ EXPORT_IF_STANDALONE uint8_t *decode_base64(const uint8_t *data, const uint8_t *
     return w;
 }
 
+EXPORT_IF_STANDALONE uint8_t *decode_base64(const uint8_t *data, const uint8_t * const data_end, uint8_t *buffer, const uint8_t * const buffer_end)
+{
+    int state;
+    uint8_t *w;
+    const uint8_t *r;
+    const int states[] = {1, 2, 3, 0};
+
+    state = 0;
+    for (w = buffer, r = data; r < data_end && w < buffer_end; r++) {
+        if (3 != state) {
+            int x, y;
+            uint8_t c1, c2;
+
+            c1 = index_64[r[0]];
+            c2 = (r + 1) < data_end ? index_64[r[1]] : 0;
+            if (0xFF == (c1 | c2)) {
+                // invalid character found
+                return NULL;
+            }
+            y = (state + 1) << 1;
+            x = 8 - y;
+            *w++ = (c1 & (0xFF >> y)) << y | (c2 >> (6 - y));
+        }
+        state = states[state];
+    }
+    if (r + 1 < data_end && w >= buffer_end) {
+        // buffer is too small to fully convert data
+        return NULL;
+    }
+
+    return w;
+}
+
 static uint8_t *write_prefix(uint8_t *buffer, const uint8_t * const buffer_end, int minor, int cost)
 {
-#if 0
-    int written;
-
-    written = snprintf((char *) buffer, buffer_end - buffer, "$%c%c$%2.2u$", BCRYPT_VERSION, minor, cost);
-    if (written < 0 || ((size_t) written) >= ((size_t) (buffer_end - buffer))) {
-        return NULL;
-    } else {
-        return buffer + written;
-    }
-#else
     if (buffer > buffer_end || ((size_t) (buffer_end - buffer)) < STR_LEN("$vm$cc$")) {
         return NULL;
     }
@@ -250,7 +169,6 @@ static uint8_t *write_prefix(uint8_t *buffer, const uint8_t * const buffer_end, 
     *buffer++ = '$';
 
     return buffer;
-#endif
 }
 
 EXPORT_IF_STANDALONE bool bcrypt_valid_hash(const ErlNifBinary *hash)
@@ -383,6 +301,9 @@ EXPORT_IF_STANDALONE bool bcrypt_hash(
     if (!bcrypt_full_parse_hash(salt, salt_end, &minor, &cost, raw_salt, raw_salt_end)) {
         return false;
     }
+    if (password > password_end) {
+        return false;
+    }
     password_len = (password_end - password);
     if ('a' == minor) {
         password_len = (uint8_t) (password_len/* + 1*/); // TODO
@@ -458,6 +379,20 @@ EXPORT_IF_STANDALONE bool bcrypt_hash(
 }
 
 #ifndef STANDALONE
+static bool c_string_to_erlang_binary(ErlNifEnv *env, ERL_NIF_TERM *output, const uint8_t * const data, size_t data_len)
+{
+    unsigned char *buffer;
+
+    assert(NULL != data);
+    if (NULL == (buffer = enif_make_new_binary(env, data_len, output))) {
+        *output = enif_make_badarg(env); // TODO: better
+    } else {
+        memcpy(buffer, data, data_len);
+    }
+
+    return NULL != buffer;
+}
+
 static ERL_NIF_TERM expassword_bcrypt_generate_salt_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     int cost;
@@ -475,13 +410,7 @@ static ERL_NIF_TERM expassword_bcrypt_generate_salt_nif(ErlNifEnv *env, int argc
         if (NULL == bcrypt_init_salt(cost, raw_salt.data, raw_salt.data + raw_salt.size, salt, salt + STR_SIZE(salt))) {
             output = enif_make_badarg(env);
         } else {
-            unsigned char *buffer;
-
-            if (NULL == (buffer = enif_make_new_binary(env, STR_SIZE(salt), &output))) {
-                output = enif_make_badarg(env); // TODO: better
-            } else {
-                memcpy(buffer, salt, STR_SIZE(salt));
-            }
+            c_string_to_erlang_binary(env, &output, salt, STR_SIZE(salt));
         }
     } else {
         output = enif_make_badarg(env);
@@ -505,13 +434,7 @@ static ERL_NIF_TERM expassword_bcrypt_hash_nif(ErlNifEnv *env, int argc, const E
         memcpy(password0, password.data, password.size);
         password0[password.size] = '\0';
         if (bcrypt_hash(password0, password0 + STR_SIZE(password0), salt.data, salt.data + salt.size, hash, hash + STR_SIZE(hash))) {
-            unsigned char *buffer;
-
-            if (NULL == (buffer = enif_make_new_binary(env, STR_SIZE(hash), &output))) {
-                output = enif_make_badarg(env); // TODO: better
-            } else {
-                memcpy(buffer, hash, STR_SIZE(hash));
-            }
+            c_string_to_erlang_binary(env, &output, hash, STR_SIZE(hash));
         } else {
             output = atom_false; // TODO: raise?
         }
@@ -541,10 +464,8 @@ static ERL_NIF_TERM expassword_bcrypt_verify_nif(ErlNifEnv *env, int argc, const
         password0[password.size] = '\0';
         if (bcrypt_hash(password0, password0 + STR_SIZE(password0), goodhash.data, goodhash.data + goodhash.size, hash, hash + STR_SIZE(hash))) {
             // TODO: length check
-// printf("%s: %d\n", __func__, __LINE__);
             output = 0 == timingsafe_bcmp(goodhash.data, hash, STR_SIZE(hash)) ? atom_true : atom_false;
         } else {
-// printf("%s: %d\n", __func__, __LINE__);
             output = atom_false;
         }
 //         explicit_bzero(hash, sizeof(hash));
@@ -637,13 +558,7 @@ static ERL_NIF_TERM expassword_bcrypt_encode_base64_nif(ErlNifEnv *env, int argc
         if (NULL == (p = encode_base64(unencoded.data, unencoded.data + unencoded.size, encoded, encoded + STR_SIZE(encoded)))) {
             output = enif_make_badarg(env);
         } else {
-            unsigned char *buffer;
-
-            if (NULL == (buffer = enif_make_new_binary(env, p - encoded, &output))) {
-                output = enif_make_badarg(env); // TODO: better
-            } else {
-                memcpy(buffer, encoded, p - encoded);
-            }
+            c_string_to_erlang_binary(env, &output, encoded, p - encoded);
         }
     } else {
         output = enif_make_badarg(env);
@@ -663,13 +578,7 @@ static ERL_NIF_TERM expassword_bcrypt_decode_base64_nif(ErlNifEnv *env, int argc
         if (NULL == (p = decode_base64(encoded.data, encoded.data + encoded.size, decoded, decoded + STR_SIZE(decoded)))) {
             output = enif_make_badarg(env);
         } else {
-            unsigned char *buffer;
-
-            if (NULL == (buffer = enif_make_new_binary(env, p - decoded, &output))) {
-                output = enif_make_badarg(env); // TODO: better
-            } else {
-                memcpy(buffer, decoded, p - decoded);
-            }
+            c_string_to_erlang_binary(env, &output, decoded, p - decoded);
         }
     } else {
         output = enif_make_badarg(env);

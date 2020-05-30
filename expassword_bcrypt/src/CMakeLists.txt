@@ -28,12 +28,7 @@ check_function_exists("timingsafe_bcmp" HAVE_TIMINGSAFE_BCMP)
 if(NOT HAVE_TIMINGSAFE_BCMP)
     list(APPEND OPTIONAL_SOURCES timingsafe_bcmp.c)
 endif(NOT HAVE_TIMINGSAFE_BCMP)
-
-include_directories(
-    ${PROJECT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${NIF_INCLUDE_DIR}
-)
+set(COMMON_INCLUDE_DIRECTORIES ${PROJECT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${NIF_INCLUDE_DIR})
 
 add_library(
     bcrypt_nif SHARED
@@ -44,6 +39,7 @@ add_library(
 set_target_properties(bcrypt_nif PROPERTIES
     PREFIX ""
     COMPILE_FLAGS "-fPIC"
+    INCLUDE_DIRECTORIES "${COMMON_INCLUDE_DIRECTORIES}"
     LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/../priv"
 )
 
@@ -55,8 +51,14 @@ if(NOT $ENV{MIX_ENV} STREQUAL "prod")
         bcrypt_nif.c
         blowfish.c
         ${OPTIONAL_SOURCES}
+        unity/unity.c
     )
+    set_source_files_properties(unity/unity.c PROPERTIES
+        COMPILE_DEFINITIONS "UNITY_OUTPUT_COLOR"
+    )
+    list(APPEND COMMON_INCLUDE_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/unity")
     set_target_properties(test PROPERTIES
         COMPILE_DEFINITIONS "STANDALONE"
+        INCLUDE_DIRECTORIES "${COMMON_INCLUDE_DIRECTORIES}"
     )
 endif(NOT $ENV{MIX_ENV} STREQUAL "prod")
