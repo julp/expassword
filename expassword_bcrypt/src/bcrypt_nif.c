@@ -201,12 +201,6 @@ EXPORT_IF_STANDALONE uint8_t *bcrypt_init_salt(int cost, const uint8_t *raw_salt
 {
     uint8_t *w;
 
-#if 0
-    // TODO: we need that
-    if ((buffer_end - buffer) < BCRYPT_SALTSPACE) {
-        return NULL;
-    }
-#endif
     if (raw_salt > raw_salt_end || ((size_t) (raw_salt_end - raw_salt)) < BCRYPT_MAXSALT) {
         // salt is too short
         return NULL;
@@ -283,7 +277,7 @@ EXPORT_IF_STANDALONE bool bcrypt_parse_hash(const ErlNifBinary *hash, int *cost)
     return *cost >= BCRYPT_MINLOGROUNDS && *cost <= BCRYPT_MAXLOGROUNDS;
 }
 
-EXPORT_IF_STANDALONE bool bcrypt_hash(
+EXPORT_IF_STANDALONE uint8_t *bcrypt_hash(
     // WARNING: password have to be null terminated and password_end should be located AFTER it!
     const uint8_t *password, const uint8_t * const password_end,
     // "salt" here means prefix "$vm$cc$" + base64 encoded salt
@@ -304,30 +298,18 @@ EXPORT_IF_STANDALONE bool bcrypt_hash(
     if (password > password_end) {
         return false;
     }
+    // REMINDER: password_len counts \0
     password_len = (password_end - password);
     if ('a' == minor) {
-        password_len = (uint8_t) (password_len/* + 1*/); // TODO
+        password_len = (uint8_t) (password_len);
     } else if ('b' == minor || 'y' == minor) {
-        if (password_len > /*72*/73) {
-            password_len = /*72*/73;
+        if (password_len > 73) {
+            password_len = 73;
         }
-//         password_len++; /* include the NUL */ // TODO
     } else {
         assert(false);
         return false;
     }
-#if 0
-    {
-        const uint8_t *c;
-
-        printf("PASSWORD : >%.*s< (%ld vs %zu)\n", (int) (password_end - password), password, password_end - password, password_len);
-//         printf("SALT : >%.*s< (%ld)\n", (int) (raw_salt_end - raw_salt), raw_salt, raw_salt_end - raw_salt);
-        for (c = raw_salt; c < raw_salt_end; c++) {
-            printf("0x%02" PRIX8, *c);
-        }
-        printf("\n");
-    }
-#endif
 
     rounds = UINT32_C(1) << cost;
     Blowfish_initstate(&state);
@@ -371,11 +353,8 @@ EXPORT_IF_STANDALONE bool bcrypt_hash(
     explicit_bzero(&state, sizeof(state));
     explicit_bzero(raw_salt, sizeof(raw_salt));
     explicit_bzero(ciphertext, sizeof(ciphertext));
-#if 0
-    printf("H = >%.*s<\n", (int) (w - hash), hash);
-#endif
 
-    return true;
+    return w;
 }
 
 #ifndef STANDALONE
@@ -433,7 +412,7 @@ static ERL_NIF_TERM expassword_bcrypt_hash_nif(ErlNifEnv *env, int argc, const E
 
         memcpy(password0, password.data, password.size);
         password0[password.size] = '\0';
-        if (bcrypt_hash(password0, password0 + STR_SIZE(password0), salt.data, salt.data + salt.size, hash, hash + STR_SIZE(hash))) {
+        if (NULL != bcrypt_hash(password0, password0 + STR_SIZE(password0), salt.data, salt.data + salt.size, hash, hash + STR_SIZE(hash))) {
             c_string_to_erlang_binary(env, &output, hash, STR_SIZE(hash));
         } else {
             output = atom_false; // TODO: raise?
@@ -458,13 +437,12 @@ static ERL_NIF_TERM expassword_bcrypt_verify_nif(ErlNifEnv *env, int argc, const
         && enif_inspect_binary(env, argv[1], &goodhash)
         && bcrypt_valid_hash(&goodhash)
     ) {
-        uint8_t hash[BCRYPT_HASHSPACE - 1], password0[password.size + 1];
+        uint8_t *p, hash[BCRYPT_HASHSPACE - 1], password0[password.size + 1];
 
         memcpy(password0, password.data, password.size);
         password0[password.size] = '\0';
-        if (bcrypt_hash(password0, password0 + STR_SIZE(password0), goodhash.data, goodhash.data + goodhash.size, hash, hash + STR_SIZE(hash))) {
-            // TODO: length check
-            output = 0 == timingsafe_bcmp(goodhash.data, hash, STR_SIZE(hash)) ? atom_true : atom_false;
+        if (NULL != (p = bcrypt_hash(password0, password0 + STR_SIZE(password0), goodhash.data, goodhash.data + goodhash.size, hash, hash + STR_SIZE(hash)))) {
+            output = p > hash && goodhash.size == ((size_t) (p - hash)) && 0 == timingsafe_bcmp(goodhash.data, hash, STR_SIZE(hash)) ? atom_true : atom_false;
         } else {
             output = atom_false;
         }
@@ -526,7 +504,7 @@ static ERL_NIF_TERM expassword_bcrypt_needs_rehash_nif(ErlNifEnv *env, int argc,
     ERL_NIF_TERM output;
 
     if (
-        2 == argc
+           2 == argc
         && enif_inspect_binary(env, argv[0], &hash)
         && enif_is_map(env, argv[1])
         && extract_options_from_erlang_map(env, argv[1], &new_cost)
