@@ -8,10 +8,7 @@ This is not really acceptable, you should be able to change the hashing algorith
 
 ## Installation
 
-~~If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `expassword` to your list of dependencies in `mix.exs`:~~
-
-This is not ready for production neither published on Hex, so to use it in one of your project, you have to modify your mix.exs file like so:
+If [available in Hex](https://hex.pm/docs/publish), the package can be installed by adding `expassword` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -23,9 +20,7 @@ def deps do
 end
 ```
 
-~~Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/expassword](https://hexdocs.pm/expassword).~~
+Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc) and published on [HexDocs](https://hexdocs.pm). Once published, the docs can be found at [https://hexdocs.pm/expassword](https://hexdocs.pm/expassword).
 
 ## Usage
 
@@ -83,4 +78,4 @@ defmodule MyAppWeb.SessionController do
 end
 ```
 
-(this is more a pseudo code than a real code)
+(this is more a pseudo code than real code)
