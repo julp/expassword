@@ -7,7 +7,7 @@ defmodule ExPassword do
 
   @known_algorithms [
     # implies :expassword_bcrypt listed as dependency in your mix.exs
-    Bcrypt,
+    ExPassword.Bcrypt,
     # implies :expassword_argon2 listed as dependency in your mix.exs
     ExPassword.Argon2,
     # <testing only>
@@ -26,8 +26,9 @@ defmodule ExPassword do
   end
 
   @doc ~S"""
-  TODO
+  Returns the list of the modules that currently (at compile time) are enabled and provide support to ExPassword for a hashing method
   """
+  @spec available_algorithms() :: [module]
   def available_algorithms do
     @available_algorithms
   end
@@ -35,7 +36,7 @@ defmodule ExPassword do
   @doc ~S"""
   TODO
   """
-  @spec x(user :: struct | nil, password :: ExPassword.Algorithm.password, field :: atom) :: {:ok, ExPassword.Algorithm.hash | nil} | {:error, :atom}
+  @spec x(user :: struct | nil, password :: ExPassword.Algorithm.password, field :: atom) :: {:ok, ExPassword.Algorithm.hash | nil} | {:error, :user_is_nil | :password_missmatch}
   def x(user, password, field \\ :encrypted_password)
 
   def x(nil, password, _field) do
@@ -57,9 +58,13 @@ defmodule ExPassword do
   end
 
   @doc ~S"""
-  TODO
+  Hashes *password* using the given *algorithm* and *options*.
+
+  *algorithm* has to be a module present in `available_algorithms/0` or `:default`. For the latest,
+  you have to define it as ExPassword application's key (`config :expassword, :default, algorithm`
+  in your config/*.exs file with *algorithm* still present in `available_algorithms/0`).
   """
-  @spec hash(algorithm :: algorithm, password :: ExPassword.Algorithm.password, options :: ExPassword.Algorithm.options) :: ExPassword.Algorithm.hash | no_return
+  @spec hash(algorithm :: algorithm, password :: ExPassword.Algorithm.password, options :: ExPassword.Algorithm.options) :: ExPassword.Algorithm.hash
   def hash(algorithm, password, options \\ %{})
 
   def hash(:default, password, options) do
@@ -73,7 +78,9 @@ defmodule ExPassword do
   end
 
   @doc ~S"""
-  TODO
+  Checks if *password* matches the given *hash*
+
+  Raises a `ExPassword.UnidentifiedAlgorithmError` error if any of `available_algorithms/0` recognizes *hash*
   """
   @spec verify?(password :: ExPassword.Algorithm.password, hash :: ExPassword.Algorithm.hash) :: boolean | no_return
   def verify?(password, hash) do
@@ -86,7 +93,7 @@ defmodule ExPassword do
   end
 
   @doc ~S"""
-  TODO
+  Returns `true` if the *hash* has not been issued by *algorithm* or *options* are different from the one used to generate *hash*
   """
   @spec needs_rehash?(algorithm :: algorithm, hash :: ExPassword.Algorithm.hash, options :: ExPassword.Algorithm.options) :: boolean
   def needs_rehash?(algorithm, hash, options \\ %{})
@@ -101,7 +108,9 @@ defmodule ExPassword do
   end
 
   @doc ~S"""
-  TODO
+  Extracts the options and the algorithm used to generate *hash*.
+
+  Returns `{:error, :invalid}` if *hash* is invalid or not recognized by `available_algorithms/0`.
   """
   @spec get_options(hash :: ExPassword.Algorithm.hash) :: {:ok, ExPassword.Algorithm.options} | {:error, :invalid}
   def get_options(hash) do
