@@ -5,7 +5,7 @@ This module add support for Bcrypt to ExPassword
 ## Credits
 
 * OpenBSD for C implementation
-* openwall for tests
+* openwall and [Java bcrypt](https://github.com/patrickfav/bcrypt) for tests
 
 ## Prerequisites
 

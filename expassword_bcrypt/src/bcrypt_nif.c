@@ -48,7 +48,6 @@
 #define BCRYPT_VERSION '2'
 #define BCRYPT_WORDS 6		/* Ciphertext words */
 #define BCRYPT_MINLOGROUNDS 4	/* we have log2(rounds) in salt */
-#define	BCRYPT_HASHSPACE	61
 
 #define BCRYPT_PREFIX "$2*$"
 #define BCRYPT_MAXLOGROUNDS 31
@@ -171,6 +170,7 @@ static uint8_t *write_prefix(uint8_t *buffer, const uint8_t * const buffer_end, 
     return buffer;
 }
 
+#ifndef STANDALONE
 EXPORT_IF_STANDALONE bool bcrypt_valid_hash(const ErlNifBinary *hash)
 {
     return
@@ -182,7 +182,6 @@ EXPORT_IF_STANDALONE bool bcrypt_valid_hash(const ErlNifBinary *hash)
     ;
 }
 
-#ifndef STANDALONE
 static bool extract_options_from_erlang_map(ErlNifEnv *env, ERL_NIF_TERM map, int *cost)
 {
     ERL_NIF_TERM value;
@@ -197,12 +196,16 @@ static bool extract_options_from_erlang_map(ErlNifEnv *env, ERL_NIF_TERM map, in
 }
 #endif /* !STANDALONE */
 
-EXPORT_IF_STANDALONE uint8_t *bcrypt_init_salt(int cost, const uint8_t *raw_salt, const uint8_t * const raw_salt_end, uint8_t *buffer, const uint8_t * const buffer_end)
+EXPORT_IF_STANDALONE uint8_t *bcrypt_init_salt(int minor, int cost, const uint8_t *raw_salt, const uint8_t * const raw_salt_end, uint8_t *buffer, const uint8_t * const buffer_end)
 {
     uint8_t *w;
 
     if (raw_salt > raw_salt_end || ((size_t) (raw_salt_end - raw_salt)) < BCRYPT_MAXSALT) {
         // salt is too short
+        return NULL;
+    }
+
+    if ('a' != minor && 'b' != minor && 'y' != minor) {
         return NULL;
     }
 
@@ -212,7 +215,7 @@ EXPORT_IF_STANDALONE uint8_t *bcrypt_init_salt(int cost, const uint8_t *raw_salt
         cost = BCRYPT_MAXLOGROUNDS;
     }
 
-    if (NULL == (w = write_prefix(buffer, buffer_end, BCRYPT_MINOR, cost))) {
+    if (NULL == (w = write_prefix(buffer, buffer_end, minor, cost))) {
         return NULL;
     }
     if (NULL == (w = encode_base64(raw_salt, raw_salt + BCRYPT_MAXSALT, w, buffer_end))) {
@@ -263,7 +266,8 @@ EXPORT_IF_STANDALONE const uint8_t *bcrypt_full_parse_hash(const uint8_t *salt, 
     return r;
 }
 
-EXPORT_IF_STANDALONE bool bcrypt_parse_hash(const ErlNifBinary *hash, int *cost)
+#ifndef STANDALONE
+static bool bcrypt_parse_hash(const ErlNifBinary *hash, int *cost)
 {
     // NOTE: length is checked before by a call to bcrypt_valid_hash
     unsigned const char * const r = hash->data + STR_LEN(BCRYPT_PREFIX);
@@ -276,6 +280,7 @@ EXPORT_IF_STANDALONE bool bcrypt_parse_hash(const ErlNifBinary *hash, int *cost)
 
     return *cost >= BCRYPT_MINLOGROUNDS && *cost <= BCRYPT_MAXLOGROUNDS;
 }
+#endif /* !STANDALONE */
 
 EXPORT_IF_STANDALONE uint8_t *bcrypt_hash(
     // WARNING: password have to be null terminated and password_end should be located AFTER it!
@@ -293,10 +298,10 @@ EXPORT_IF_STANDALONE uint8_t *bcrypt_hash(
     const uint8_t * const raw_salt_end = raw_salt + STR_SIZE(raw_salt);
 
     if (!bcrypt_full_parse_hash(salt, salt_end, &minor, &cost, raw_salt, raw_salt_end)) {
-        return false;
+        return NULL;
     }
     if (password > password_end) {
-        return false;
+        return NULL;
     }
     // REMINDER: password_len counts \0
     password_len = (password_end - password);
@@ -308,7 +313,7 @@ EXPORT_IF_STANDALONE uint8_t *bcrypt_hash(
         }
     } else {
         assert(false);
-        return false;
+        return NULL;
     }
 
     rounds = UINT32_C(1) << cost;
@@ -341,13 +346,13 @@ EXPORT_IF_STANDALONE uint8_t *bcrypt_hash(
     }
 
     if (NULL == (w = write_prefix(hash, hash_end, minor, cost))) {
-        return false;
+        return NULL;
     }
     if (NULL == (w = encode_base64(raw_salt, raw_salt_end, w, hash_end))) {
-        return false;
+        return NULL;
     }
     if (NULL == (w = encode_base64(ciphertext, ciphertext + STR_LEN(ciphertext), w, hash_end))) {
-        return false;
+        return NULL;
     }
     explicit_bzero(cdata, sizeof(cdata));
     explicit_bzero(&state, sizeof(state));
@@ -386,7 +391,7 @@ static ERL_NIF_TERM expassword_bcrypt_generate_salt_nif(ErlNifEnv *env, int argc
     ) {
         uint8_t salt[BCRYPT_SALTSPACE];
 
-        if (NULL == bcrypt_init_salt(cost, raw_salt.data, raw_salt.data + raw_salt.size, salt, salt + STR_SIZE(salt))) {
+        if (NULL == bcrypt_init_salt(BCRYPT_MINOR, cost, raw_salt.data, raw_salt.data + raw_salt.size, salt, salt + STR_SIZE(salt))) {
             output = enif_make_badarg(env);
         } else {
             c_string_to_erlang_binary(env, &output, salt, STR_SIZE(salt));

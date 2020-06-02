@@ -30,3 +30,4 @@
 #define BCRYPT_MAXSALT 16	/* Precomputation is just so nice */
 // NOTE: "+ 1" is commented because we don't count the \0
 #define	BCRYPT_SALTSPACE	(STR_LEN("$vm$cc$") + (BCRYPT_MAXSALT * 4 + 2) / 3/* + 1*/)
+#define	BCRYPT_HASHSPACE	61
