@@ -19,7 +19,8 @@ defmodule ExPassword.Bcrypt do
 
   Valid options are:
 
-    * TODO
+    * cost: the algorithmic cost. It defines the number of iterations as a power of two (2^*cost*) so
+      higher is the cost longer it takes to compute it (and consequently brute force it)
 
   An `ArgumentError` will be raised if one of the options above is invalid or if an internal error occurs.
   """
@@ -46,8 +47,8 @@ defmodule ExPassword.Bcrypt do
   Returns `{:error, :invalid}` if *hash* is not a valid bcrypt hash else `{:ok, map}` where map is a Map which
   contains all the parameters that permitted to compute this hash.
 
-      iex> ExPassword.Bcrypt.get_options("TODO")
-      {:ok, %{TODO}}
+      iex> ExPassword.Bcrypt.get_options("$2a$04$5DCebwootqWMCp59ISrMJ.l4WvgHIVg17ZawDIrDM2IjlE64GDNQS")
+      {:ok, %{cost: 4}}
   """
   @impl ExPassword.Algorithm
   def get_options(hash) do
