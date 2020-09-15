@@ -51,6 +51,7 @@
 
 #define BCRYPT_PREFIX "$2*$"
 #define BCRYPT_MAXLOGROUNDS 31
+#define BCRYPT_MAX_KEY_LEN 72
 
 #ifndef STANDALONE
 # define ATOM(x) \
@@ -403,6 +404,18 @@ static ERL_NIF_TERM expassword_bcrypt_generate_salt_nif(ErlNifEnv *env, int argc
     return output;
 }
 
+static uint8_t *memcpy_l(const uint8_t *from, const uint8_t * const from_end, uint8_t *to, const uint8_t * const to_end)
+{
+    while (to < to_end && from < from_end) {
+        *to++ = *from++;
+    }
+    if (to < to_end) {
+      *to++ = '\0';
+    }
+
+    return to;
+}
+
 static ERL_NIF_TERM expassword_bcrypt_hash_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
     ERL_NIF_TERM output;
@@ -413,11 +426,10 @@ static ERL_NIF_TERM expassword_bcrypt_hash_nif(ErlNifEnv *env, int argc, const E
         && enif_inspect_binary(env, argv[0], &password)
         && enif_inspect_binary(env, argv[1], &salt)
     ) {
-        uint8_t hash[BCRYPT_HASHSPACE - 1], password0[password.size + 1];
+        uint8_t hash[BCRYPT_HASHSPACE - 1], password0[BCRYPT_MAX_KEY_LEN], *password0_end;
 
-        memcpy(password0, password.data, password.size);
-        password0[password.size] = '\0';
-        if (NULL != bcrypt_hash(password0, password0 + STR_SIZE(password0), salt.data, salt.data + salt.size, hash, hash + STR_SIZE(hash))) {
+        password0_end = memcpy_l(password.data, password.data + password.size, password0, password0 + STR_SIZE(password0));
+        if (NULL != bcrypt_hash(password0, password0_end, salt.data, salt.data + salt.size, hash, hash + STR_SIZE(hash))) {
             c_string_to_erlang_binary(env, &output, hash, STR_SIZE(hash));
         } else {
             output = atom_false; // TODO: raise?
@@ -442,11 +454,10 @@ static ERL_NIF_TERM expassword_bcrypt_verify_nif(ErlNifEnv *env, int argc, const
         && enif_inspect_binary(env, argv[1], &goodhash)
         && bcrypt_valid_hash(&goodhash)
     ) {
-        uint8_t *p, hash[BCRYPT_HASHSPACE - 1], password0[password.size + 1];
+        uint8_t *p, hash[BCRYPT_HASHSPACE - 1], password0[BCRYPT_MAX_KEY_LEN], *password0_end;
 
-        memcpy(password0, password.data, password.size);
-        password0[password.size] = '\0';
-        if (NULL != (p = bcrypt_hash(password0, password0 + STR_SIZE(password0), goodhash.data, goodhash.data + goodhash.size, hash, hash + STR_SIZE(hash)))) {
+        password0_end = memcpy_l(password.data, password.data + password.size, password0, password0 + STR_SIZE(password0));
+        if (NULL != (p = bcrypt_hash(password0, password0_end, goodhash.data, goodhash.data + goodhash.size, hash, hash + STR_SIZE(hash)))) {
             output = p > hash && goodhash.size == ((size_t) (p - hash)) && 0 == timingsafe_bcmp(goodhash.data, hash, STR_SIZE(hash)) ? atom_true : atom_false;
         } else {
             output = atom_false;
