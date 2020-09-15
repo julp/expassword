@@ -46,7 +46,7 @@ void tearDown(void) {
 
 // to avoid declaring one in each function or so
 static size_t i;
-static uint8_t *p;
+static const uint8_t *p;
 
 static void print_raw_salt(const uint8_t *raw_salt, const uint8_t * const raw_salt_end)
 {
