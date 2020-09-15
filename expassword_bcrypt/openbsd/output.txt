@@ -1,0 +1,27 @@
+uname -a
+
+OpenBSD localhost 6.7 GENERIC.MP#182 amd64
+
+
+./test '$2a$04$......................'
+
+71 'a' (+ 0) = >$2a$04$......................OKajFstSaQgvFOLFT26yIEg4fPr47jO<
+72 'a' (+ 0) = >$2a$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+73 'a' (+ 0) = >$2a$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+74 'a' (+ 0) = >$2a$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+253 'a' (+ 0) = >$2a$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+254 'a' (+ 0) = >$2a$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+255 'a' (+ 0) = >$2a$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+256 'a' (+ 0) = >$2a$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+
+
+./test '$2b$04$......................'
+
+71 'a' (+ 0) = >$2b$04$......................OKajFstSaQgvFOLFT26yIEg4fPr47jO<
+72 'a' (+ 0) = >$2b$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+73 'a' (+ 0) = >$2b$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+74 'a' (+ 0) = >$2b$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+253 'a' (+ 0) = >$2b$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+254 'a' (+ 0) = >$2b$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+255 'a' (+ 0) = >$2b$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
+256 'a' (+ 0) = >$2b$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36<
