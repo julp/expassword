@@ -489,6 +489,36 @@ void bcrypt_hash_72th_key_truncation_test(void)
 #endif
 }
 
+void bcrypt_hash_72th_key_truncation_test_bis(void)
+{
+    size_t j;
+    uint8_t buffer[BCRYPT_HASHSPACE - 1];
+    const char *hashes[] = {
+        "$2a$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36",
+        "$2b$04$......................UaUp2CqHXn14N7RprrzoDsNv91ahi36",
+    };
+    const char *passwords[] = {
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // 72
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // 73
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // 254
+        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", // 255
+    };
+    char password71[] = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; // 71
+
+    for (i = 0; i < ARRAY_SIZE(hashes); i++) {
+        erase_buffer(buffer, buffer + sizeof(buffer));
+        p = bcrypt_hash((const uint8_t *) password71, (const uint8_t * const) (password71 + STR_SIZE(password71)), (const uint8_t *) hashes[i], (const uint8_t * const) (hashes[i] + strlen(hashes[i])), buffer, buffer + STR_SIZE(buffer));
+        TEST_ASSERT_NOT_NULL(p);
+        TEST_ASSERT(0 != memcmp(buffer, password71, STR_SIZE(password71)));
+        for (j = 0; j < ARRAY_SIZE(passwords); j++) {
+            erase_buffer(buffer, buffer + sizeof(buffer));
+            p = bcrypt_hash((const uint8_t *) passwords[j], (const uint8_t * const) (passwords[j] + strlen(passwords[j]) + 1), (const uint8_t *) hashes[i], (const uint8_t * const) (hashes[i] + strlen(hashes[i])), buffer, buffer + STR_SIZE(buffer));
+            TEST_ASSERT_NOT_NULL(p);
+            TEST_ASSERT_EQUAL_MEMORY(hashes[i], buffer, strlen(hashes[i]));
+        }
+    }
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -511,6 +541,7 @@ int main(void)
     UNITY_PRINT_EOL();
     RUN_TEST(bcrypt_known_vectors_test);
     RUN_TEST(bcrypt_hash_72th_key_truncation_test);
+    RUN_TEST(bcrypt_hash_72th_key_truncation_test_bis);
 
     return UNITY_END();
 }
