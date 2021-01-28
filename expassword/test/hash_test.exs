@@ -10,9 +10,5 @@ defmodule ExPassword.HashTest do
         end
       end
     end
-
-    test "check hashing with default algorithm" do
-      # TODO ?
-    end
   end
 end

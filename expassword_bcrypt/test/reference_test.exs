@@ -43,7 +43,7 @@ defmodule ExPassword.Bcrypt.ReferenceTest do
       <> "\x55\xaa\xff\x55\xaa\xff\x55\xaa\xff\x55\xaa\xff"},
     {"$2a$05$CCCCCCCCCCCCCCCCCCCCC.7uG0VCzI2bS7j6ymqJi9CdcdxiRTWNy", ""},
   ]
-  test "TODO" do
+  test "checks some known hashes" do
     Enum.each(
       @cases,
       fn {hash, password} ->

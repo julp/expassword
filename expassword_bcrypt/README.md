@@ -33,7 +33,7 @@ Default values are:
 
 ```elixir
 config :expassword_bcrypt,
-  # TODO
+  # the algorithmic cost, defines the number of iterations
   cost: 10
 ```
 

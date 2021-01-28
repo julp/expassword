@@ -11,7 +11,7 @@ defmodule ExPassword.Argon2 do
   alias ExPassword.Argon2.Base
 
   @default_salt_length 16
-  #@default_options %{type: :argon2_id, threads: 2, memory_cost: 131072, time_cost: 4}
+  #@default_options %{type: :argon2id, threads: 2, memory_cost: 131072, time_cost: 4}
   @default_options Enum.into(Application.get_all_env(:expassword_argon2), %{})
 
   @doc """

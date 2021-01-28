@@ -15,7 +15,7 @@ defmodule Mix.Tasks.ExPassword.Check do
     end
   end
 
-  @shortdoc "TODO"
+  @shortdoc "Checks if a password matches a hash"
   def run(args) do
     {_opts, parsed, _unknown} = OptionParser.parse(args, switches: [])
     [password, hash] = parsed

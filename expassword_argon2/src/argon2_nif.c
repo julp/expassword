@@ -126,47 +126,53 @@ static bool argon2_valid_hash(const ErlNifBinary *hash, argon2_type *type)
 
 static bool argon2_parse_hash(const ErlNifBinary *hash, argon2_type *type, uint32_t *version, uint32_t *threads, uint32_t *time_cost, uint32_t *memory_cost)
 {
-    char *end;
-    const char *r = (const char *) hash->data;
-    const char * const hash_end = (const char *) hash->data + hash->size;
+    bool parsed;
 
-    if (hash->size < STR_LEN(ARGON2ID_PREFIX)) {
-        return false;
-    }
-    if (0 == MEMCMP(hash->data, ARGON2ID_PREFIX)) {
-        *type = Argon2_id;
-        r += STR_LEN(ARGON2ID_PREFIX);
-    } else if (0 == MEMCMP(hash->data, ARGON2I_PREFIX)) {
-        *type = Argon2_i;
-        r += STR_LEN(ARGON2I_PREFIX);
-    } else {
-        return false;
-    }
-    if (0 == MEMCMP(r, "v=")) {
-        r += STR_LEN("v=");
-        if (PARSE_NUM_ERR_NON_DIGIT_FOUND != strntouint32_t(r, hash_end, &end, 10, NULL, NULL, version) || 0 != MEMCMP(end, "$m=")) {
-            return false;
+    parsed = false;
+    do {
+        char *end;
+        const char *r = (const char *) hash->data;
+        const char * const hash_end = (const char *) hash->data + hash->size;
+
+        if (hash->size < STR_LEN(ARGON2ID_PREFIX)) {
+            break;
         }
-        r = end + STR_LEN("$m=");
-    } else if (0 == MEMCMP(r, "m=")) {
-        *version = ARGON2_VERSION_10;
-        r += STR_LEN("m=");
-    } else {
-        return false;
-    }
-    if (PARSE_NUM_ERR_NON_DIGIT_FOUND != strntouint32_t(r, hash_end, &end, 10, NULL, NULL, memory_cost) || 0 != MEMCMP(end, ",t=")) {
-        return false;
-    }
-    r = end + STR_LEN(",t=");
-    if (PARSE_NUM_ERR_NON_DIGIT_FOUND != strntouint32_t(r, hash_end, &end, 10, NULL, NULL, time_cost) || 0 != MEMCMP(end, ",p=")) {
-        return false;
-    }
-    r = end + STR_LEN(",p=");
-    if (PARSE_NUM_ERR_NON_DIGIT_FOUND != strntouint32_t(r, hash_end, &end, 10, NULL, NULL, threads) || '$' != *end) {
-        return false;
-    }
+        if (0 == MEMCMP(hash->data, ARGON2ID_PREFIX)) {
+            *type = Argon2_id;
+            r += STR_LEN(ARGON2ID_PREFIX);
+        } else if (0 == MEMCMP(hash->data, ARGON2I_PREFIX)) {
+            *type = Argon2_i;
+            r += STR_LEN(ARGON2I_PREFIX);
+        } else {
+            break;
+        }
+        if (0 == MEMCMP(r, "v=")) {
+            r += STR_LEN("v=");
+            if (PARSE_NUM_ERR_NON_DIGIT_FOUND != strntouint32_t(r, hash_end, &end, 10, NULL, NULL, version) || 0 != MEMCMP(end, "$m=")) {
+                break;
+            }
+            r = end + STR_LEN("$m=");
+        } else if (0 == MEMCMP(r, "m=")) {
+            *version = ARGON2_VERSION_10;
+            r += STR_LEN("m=");
+        } else {
+            break;
+        }
+        if (PARSE_NUM_ERR_NON_DIGIT_FOUND != strntouint32_t(r, hash_end, &end, 10, NULL, NULL, memory_cost) || 0 != MEMCMP(end, ",t=")) {
+            break;
+        }
+        r = end + STR_LEN(",t=");
+        if (PARSE_NUM_ERR_NON_DIGIT_FOUND != strntouint32_t(r, hash_end, &end, 10, NULL, NULL, time_cost) || 0 != MEMCMP(end, ",p=")) {
+            break;
+        }
+        r = end + STR_LEN(",p=");
+        if (PARSE_NUM_ERR_NON_DIGIT_FOUND != strntouint32_t(r, hash_end, &end, 10, NULL, NULL, threads) || '$' != *end) {
+            break;
+        }
+        parsed = true;
+    } while (false);
 
-    return true;
+    return parsed;
 }
 
 static ERL_NIF_TERM make_elixir_exception(ErlNifEnv *env, const char *module, const char *error)
@@ -215,14 +221,14 @@ static ERL_NIF_TERM expassword_argon2_hash_nif(ErlNifEnv *env, int argc, const E
 
         encoded_len = argon2_encodedlen(time_cost, memory_cost, threads, salt.size, STR_SIZE(out), type);
         {
-            char buffer[encoded_len];
+            char buffer[encoded_len]; // TODO: VLA
 
             status = argon2_hash(time_cost, memory_cost, threads, password.data, password.size, salt.data, salt.size, out, STR_SIZE(out), buffer, encoded_len, type, version);
             if (ARGON2_OK == status) {
                 unsigned char *encoded;
 
                 if (NULL == (encoded = enif_make_new_binary(env, encoded_len - 1, &output))) {
-                    output = enif_make_badarg(env); // TODO: better
+                    output = enif_make_badarg(env); // TODO: something better/more explicit?
                 } else {
                     memcpy(encoded, buffer, encoded_len - 1);
                 }
@@ -250,7 +256,7 @@ static ERL_NIF_TERM expassword_argon2_verify_nif(ErlNifEnv *env, int argc, const
         && argon2_valid_hash(&hash, &type)
     ) {
         argon2_error_codes status;
-        char buffer[hash.size + 1];
+        char buffer[hash.size + 1]; // TODO: VLA
 
         memcpy(buffer, (const char *) hash.data, hash.size);
         buffer[hash.size] = '\0';

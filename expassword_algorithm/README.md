@@ -1,6 +1,6 @@
 # ExpasswordAlgorithm
 
-**TODO: Add description**
+Provides the behaviour to be implemented by hashing methods added to ExPassword.
 
 ## Installation
 

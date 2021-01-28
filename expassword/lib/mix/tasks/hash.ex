@@ -6,8 +6,10 @@ defmodule Mix.Tasks.ExPassword.Hash do
   end
 
   defp guess_options(module) do
-    {:ok, options} = ExPassword.hash(module, "")
-    |> ExPassword.get_options()
+    {:ok, options} =
+      module
+      |> ExPassword.hash("")
+      |> ExPassword.get_options()
     options
   end
 
@@ -43,7 +45,7 @@ defmodule Mix.Tasks.ExPassword.Hash do
   defp print_options(options) do
     if Enum.any?(options) do
       IO.puts("")
-      IO.puts("Options that were used for the hashing:")
+      IO.puts("Options that were used for hashing:")
       Enum.each(
         options,
         fn {k, v} ->
@@ -53,7 +55,7 @@ defmodule Mix.Tasks.ExPassword.Hash do
     end
   end
 
-  @shortdoc "TODO"
+  @shortdoc "Hashes a password"
   def run(args) do
     {opts, parsed, _unknown} = OptionParser.parse(args, switches: [])
     [algorithm, password] = parsed
@@ -66,8 +68,10 @@ defmodule Mix.Tasks.ExPassword.Hash do
       """
       System.halt(:abort)
     end
-    user_options = guess_options(algorithm)
-    |> handle_options(opts)
+    user_options =
+      algorithm
+      |> guess_options()
+      |> handle_options(opts)
     hash = ExPassword.hash(algorithm, password, user_options)
     IO.puts "ExPassword.hash(#{inspect(algorithm)}, #{inspect(password)}) = #{inspect(hash)}"
     print_options(user_options)

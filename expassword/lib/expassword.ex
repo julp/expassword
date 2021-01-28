@@ -3,7 +3,7 @@ defmodule ExPassword do
   Documentation for ExPassword.
   """
 
-  @type algorithm :: module | :default
+  @type algorithm :: module
 
   @known_algorithms [
     # implies :expassword_bcrypt listed as dependency in your mix.exs
@@ -28,31 +28,33 @@ defmodule ExPassword do
   @doc ~S"""
   Returns the list of the modules that currently (at compile time) are enabled and provide support to ExPassword for a hashing method
   """
-  @spec available_algorithms() :: [module]
+  @spec available_algorithms() :: [algorithm]
   def available_algorithms do
     @available_algorithms
   end
 
   @doc ~S"""
-  TODO
+  TODO (x)
   """
-  @spec x(user :: struct | nil, password :: ExPassword.Algorithm.password, field :: atom) :: {:ok, ExPassword.Algorithm.hash | nil} | {:error, :user_is_nil | :password_missmatch}
-  def x(user, password, field \\ :encrypted_password)
+  @spec x(user :: struct | nil, password :: ExPassword.Algorithm.password, field :: atom, algorithm :: algorithm, options :: ExPassword.Algorithm.options) :: {:ok, ExPassword.Algorithm.hash | nil} | {:error, :user_is_nil | :password_missmatch}
+  def x(user, password, field \\ :encrypted_password, algorithm, options \\ %{})
 
-  def x(nil, password, _field) do
-    ExPassword.hash(:default, password)
+  def x(nil, password, _field, algorithm, options) do
+    ExPassword.hash(algorithm, password, options)
     {:error, :user_is_nil}
   end
 
-  def x(user, password, field) do
+  def x(user, password, field, algorithm, options) do
     hash = Map.fetch!(user, field)
     case ExPassword.verify?(password, hash) do
-      true -> # TODO: {:ok, ?}
-        change = if ExPassword.needs_rehash?(:default, hash) do # TODO
-          [{field, ExPassword.hash(:default, password)}]
+      true ->
+        change = if ExPassword.needs_rehash?(algorithm, hash, options) do # TODO
+          [{field, ExPassword.hash(algorithm, password, options)}]
+        else
+          nil
         end
         {:ok, change}
-      false -> # TODO: {:error, ?}
+      false ->
         {:error, :password_missmatch}
     end
   end
@@ -60,20 +62,12 @@ defmodule ExPassword do
   @doc ~S"""
   Hashes *password* using the given *algorithm* and *options*.
 
-  *algorithm* has to be a module present in `available_algorithms/0` or `:default`. For the latest,
-  you have to define it as ExPassword application's key (`config :expassword, :default, algorithm`
-  in your config/*.exs file with *algorithm* still present in `available_algorithms/0`).
+  *algorithm* has to be a module present in `available_algorithms/0`.
   """
   @spec hash(algorithm :: algorithm, password :: ExPassword.Algorithm.password, options :: ExPassword.Algorithm.options) :: ExPassword.Algorithm.hash
   def hash(algorithm, password, options \\ %{})
-
-  def hash(:default, password, options) do
-    :expassword
-    |> Application.fetch_env!(:default)
-    |> hash(password, options)
-  end
-
-  def hash(algorithm, password, options) do
+    when algorithm in @available_algorithms
+  do
     algorithm.hash(password, options)
   end
 
@@ -114,12 +108,14 @@ defmodule ExPassword do
   """
   @spec get_options(hash :: ExPassword.Algorithm.hash) :: {:ok, ExPassword.Algorithm.options} | {:error, :invalid}
   def get_options(hash) do
-    module = find_algorithm(hash)
-    case module.get_options(hash) do
-      {:ok, options} ->
+    with(
+      module when not is_nil(module) <- find_algorithm(hash),
+      {:ok, options} <- module.get_options(hash)
+    ) do
         {:ok, Map.put(options, :provider, module)}
-      any ->
-        any
+    else
+      _ ->
+        {:error, :invalid}
     end
   end
 end
