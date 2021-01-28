@@ -1,0 +1,10 @@
+*.so
+doc/
+deps/
+*.plist
+_build/
+Makefile
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+expassword_bcrypt/src/test
