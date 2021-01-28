@@ -13,7 +13,7 @@ defmodule ExPassword.ExternalArgon2 do
     Make sure that in your mix.exs file, in deps/1 function to have like the following:
 
       {:expassword_argon2, ">= 0.0.0", only: :prod},
-      {:expassword_external_argon2, ">= 0.0.0", only: :dev},
+      {:expassword_external_argon2, ">= 0.0.0", only: ~W[dev test]a},
     """
   end
 
