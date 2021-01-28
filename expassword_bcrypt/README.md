@@ -20,6 +20,7 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
 ```elixir
 def deps do
   [
+    {:expassword, ">= 0.0.0"},
     {:expassword_bcrypt, "~> 0.1.0"},
   ]
 end
