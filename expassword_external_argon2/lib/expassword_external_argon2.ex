@@ -1,4 +1,4 @@
-defmodule ExPassword.ExternalArgon2 do
+defmodule ExPassword.Argon2 do
   use ExPassword.Algorithm
 
   @invalid {:error, :invalid}
@@ -127,9 +127,13 @@ defmodule ExPassword.ExternalArgon2 do
 
   @impl ExPassword.Algorithm
   def needs_rehash?(hash, new_options) do
-    {:ok, old_options} = get_options(hash)
-    #Map.delete(old_options, :provider) != new_options
-    old_options != new_options
+    case get_options(hash) do
+      {:ok, old_options} ->
+        #Map.delete(old_options, :provider) != new_options
+        old_options != new_options
+      _ ->
+        raise ArgumentError
+    end
   end
 
   @impl ExPassword.Algorithm
