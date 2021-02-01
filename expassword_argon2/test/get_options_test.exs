@@ -3,8 +3,8 @@ defmodule ExPassword.Argon2.GetOptionsTest do
 
   describe "ExPassword.Argon2.get_options/1" do
     test "ensures options from a valid argon2i hash are successfuly extracted" do
-      assert {:ok, %{type: :argon2i, memory_cost: 1048576, version: 0x10, threads: 1, time_cost: 2}} == ExPassword.Argon2.get_options("$argon2i$m=1048576,t=2,p=1$c29tZXNhbHQ$lpDsVdKNPtMlYvLnPqYrArAYdXZDoq5ueVKEWd6BBuk")
-      assert {:ok, %{type: :argon2i, memory_cost: 65536, version: 0x13, threads: 2, time_cost: 4}} == ExPassword.Argon2.get_options("$argon2i$v=19$m=65536,t=4,p=2$MS4yVjlVck5ZVlcwQlV6WA$JRgNzvz0ivV/3BIlq6DZxE3Vnhrfl5YX6Lpxym0ucUw")
+      assert {:ok, %{type: :argon2i, memory_cost: 1_048_576, version: 0x10, threads: 1, time_cost: 2}} == ExPassword.Argon2.get_options("$argon2i$m=1048576,t=2,p=1$c29tZXNhbHQ$lpDsVdKNPtMlYvLnPqYrArAYdXZDoq5ueVKEWd6BBuk")
+      assert {:ok, %{type: :argon2i, memory_cost: 65_536, version: 0x13, threads: 2, time_cost: 4}} == ExPassword.Argon2.get_options("$argon2i$v=19$m=65536,t=4,p=2$MS4yVjlVck5ZVlcwQlV6WA$JRgNzvz0ivV/3BIlq6DZxE3Vnhrfl5YX6Lpxym0ucUw")
     end
 
     test "ensures options from a valid argon2id hash are successfuly extracted" do
