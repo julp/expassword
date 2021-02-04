@@ -21,11 +21,12 @@ defmodule ExPassword.Bcrypt do
     options = Map.merge(@default_options, options)
     cost = Map.get(options, :cost, 2)
     code = ~S"""
+    list(, $password, $cost) = $argv;
     echo password_hash(
-      $argv[1],
+      $password,
       PASSWORD_BCRYPT,
       [
-        'cost' => $argv[2],
+        'cost' => $cost,
       ]
     );
     """
@@ -36,9 +37,10 @@ defmodule ExPassword.Bcrypt do
   @impl ExPassword.Algorithm
   def verify?(hash, password) do
     code = ~S"""
+    list(, $password, $hash) = $argv;
     echo password_verify(
-      $argv[1],
-      $argv[2]
+      $password,
+      $hash
     );
     """
     {result, 0} = System.cmd("php", ["-r", code, "--", password, hash])

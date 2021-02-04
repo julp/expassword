@@ -30,13 +30,14 @@ defmodule ExPassword.Argon2 do
     time_cost = Map.get(options, :time_cost, 4)
     threads = Map.get(options, :threads, 2)
     code = ~S"""
+    list(, $password, $algorithm, $memory_cost, $time_cost, $threads) = $argv;
     echo password_hash(
-      $argv[1],
-      constant($argv[2]),
+      $password,
+      constant($algorithm),
       [
-        'memory_cost' => $argv[3],
-        'time_cost' => $argv[4],
-        'threads' => $argv[5],
+        'memory_cost' => $memory_cost,
+        'time_cost' => $time_cost,
+        'threads' => $threads,
       ]
     );
     """
@@ -47,9 +48,10 @@ defmodule ExPassword.Argon2 do
   @impl ExPassword.Algorithm
   def verify?(hash, password) do
     code = ~S"""
+    list(, $password, $hash) = $argv;
     echo password_verify(
-      $argv[1],
-      $argv[2]
+      $password,
+      $hash
     );
     """
     {result, 0} = System.cmd("php", ["-r", code, "--", password, hash])
