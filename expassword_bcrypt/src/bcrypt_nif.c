@@ -95,7 +95,7 @@ EXPORT_IF_STANDALONE uint8_t *encode_base64(const uint8_t *data, const uint8_t *
     int state; // the (n + 1)th decoded byte to write into buffer
     uint8_t *w;
     const uint8_t *r;
-    int states[] = {1, 2, 3, 0}; // replace a counter and % 4
+    const int states[] = {1, 2, 3, 0}; // replace a counter and % 4
 
     state = 0;
     w = buffer;
