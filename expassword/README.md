@@ -43,7 +43,7 @@ defmodule MyAppWeb.SessionController do
         end
 
         conn
-        |> put_flash(:info, "successfuly authenticated")
+        |> put_flash(:info, "successfully authenticated")
         |> put_session(:user_id, user.id)
         |> redirect(to: "/")
       else
@@ -70,7 +70,7 @@ defmodule MyAppWeb.SessionController do
           |> MyApp.Repo.update!()
         end
         conn
-        |> put_flash(:info, "successfuly authenticated")
+        |> put_flash(:info, "successfully authenticated")
         |> put_session(:user_id, user.id)
         |> redirect(to: "/")
       {:error, _reason} ->
