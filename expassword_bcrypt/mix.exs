@@ -60,7 +60,6 @@ defmodule ExPassword.Bcrypt.MixProject do
       end,
       {:earmark, "~> 1.4", only: :dev},
       {:ex_doc, "~> 0.22", only: :dev},
-      {:credo, "~> 1.4", only: [:dev, :test], runtime: false},
     ]
   end
 end
