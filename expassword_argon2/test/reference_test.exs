@@ -193,13 +193,13 @@ defmodule ExPassword.Argon2.ReferenceTest do
 
   test "Common error state tests" do
     version = 0x13
-    assert_raise ArgumentError, ~R/emory cost is too small/i, fn ->
+    assert_raise ArgumentError, ~R/Memory cost is too small/i, fn ->
       argon2_hash(2, 1, 1, "password", strlen("password"),
         "diffsalt", strlen("diffsalt"),
         :argon2id, version)
     end
     assert_raise ArgumentError, ~R/Salt is too short/i, fn ->
-      argon2_hash(2, 1 <<< 12, 1, "password", strlen("password"), "s", 1,
+      argon2_hash(2, 12, 1, "password", strlen("password"), "s", 1,
         :argon2id, version)
     end
   end
