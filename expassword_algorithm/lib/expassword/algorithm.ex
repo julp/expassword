@@ -18,8 +18,10 @@ defmodule ExPassword.Algorithm do
   This callback should return `true` if the options initially used to produce *hash* are
   somehow different to *options*. Its goal is to indicate if the password should be rehashed
   because these options have since changed, in particular if they are now too weak.
+
+  Raises if *options* is invalid
   """
-  @callback needs_rehash?(hash :: hash, options :: options) :: boolean
+  @callback needs_rehash?(hash :: hash, options :: options) :: boolean | no_return
 
   @doc ~S"""
   Callback to check if the provided *password* matches the reference hash *stored_hash*

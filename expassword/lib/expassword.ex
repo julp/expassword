@@ -36,15 +36,19 @@ defmodule ExPassword do
   @doc ~S"""
   TODO (x)
   """
-  @spec x(user :: struct | nil, password :: ExPassword.Algorithm.password, field :: atom, algorithm :: algorithm, options :: ExPassword.Algorithm.options) :: {:ok, ExPassword.Algorithm.hash | nil} | {:error, :user_is_nil | :password_missmatch}
-  def x(user, password, field \\ :encrypted_password, algorithm, options \\ %{})
+  @spec x(user :: struct | nil, password :: ExPassword.Algorithm.password, field :: atom, algorithm :: algorithm, options :: ExPassword.Algorithm.options) :: {:ok, ExPassword.Algorithm.hash | nil} | {:error, :user_is_nil | :password_missmatch} | no_return
+  def x(user, password, field \\ :encrypted_password, algorithm, options)
 
-  def x(nil, password, _field, algorithm, options) do
+  def x(nil, password, field, algorithm, options = %{})
+    when is_binary(password) and is_atom(field) and is_atom(algorithm)
+  do
     ExPassword.hash(algorithm, password, options)
     {:error, :user_is_nil}
   end
 
-  def x(user, password, field, algorithm, options) do
+  def x(user = %_{}, password, field, algorithm, options = %{})
+    when is_binary(password) and is_atom(field) and is_atom(algorithm)
+  do
     hash = Map.fetch!(user, field)
     case ExPassword.verify?(password, hash) do
       true ->
@@ -64,9 +68,9 @@ defmodule ExPassword do
 
   *algorithm* has to be a module present in `available_algorithms/0`.
   """
-  @spec hash(algorithm :: algorithm, password :: ExPassword.Algorithm.password, options :: ExPassword.Algorithm.options) :: ExPassword.Algorithm.hash
-  def hash(algorithm, password, options \\ %{})
-    when algorithm in @available_algorithms
+  @spec hash(algorithm :: algorithm, password :: ExPassword.Algorithm.password, options :: ExPassword.Algorithm.options) :: ExPassword.Algorithm.hash | no_return
+  def hash(algorithm, password, options = %{})
+    when algorithm in @available_algorithms and is_binary(password)
   do
     algorithm.hash(password, options)
   end
@@ -77,7 +81,9 @@ defmodule ExPassword do
   Raises a `ExPassword.UnidentifiedAlgorithmError` error if any of `available_algorithms/0` recognizes *hash*
   """
   @spec verify?(password :: ExPassword.Algorithm.password, hash :: ExPassword.Algorithm.hash) :: boolean | no_return
-  def verify?(password, hash) do
+  def verify?(password, hash)
+    when is_binary(password) and is_binary(hash)
+  do
     case find_algorithm(hash) do
       nil ->
         raise ExPassword.UnidentifiedAlgorithmError, hash: hash
@@ -89,9 +95,9 @@ defmodule ExPassword do
   @doc ~S"""
   Returns `true` if the *hash* has not been issued by *algorithm* or *options* are different from the one used to generate *hash*
   """
-  @spec needs_rehash?(algorithm :: algorithm, hash :: ExPassword.Algorithm.hash, options :: ExPassword.Algorithm.options) :: boolean
-  def needs_rehash?(algorithm, hash, options \\ %{})
-    when algorithm in @available_algorithms
+  @spec needs_rehash?(algorithm :: algorithm, hash :: ExPassword.Algorithm.hash, options :: ExPassword.Algorithm.options) :: boolean | no_return
+  def needs_rehash?(algorithm, hash, options = %{})
+    when algorithm in @available_algorithms and is_binary(hash)
   do
     case find_algorithm(hash) do
       ^algorithm ->
@@ -107,7 +113,9 @@ defmodule ExPassword do
   Returns `{:error, :invalid}` if *hash* is invalid or not recognized by `available_algorithms/0`.
   """
   @spec get_options(hash :: ExPassword.Algorithm.hash) :: {:ok, ExPassword.Algorithm.options} | {:error, :invalid}
-  def get_options(hash) do
+  def get_options(hash)
+    when is_binary(hash)
+  do
     with(
       module when not is_nil(module) <- find_algorithm(hash),
       {:ok, options} <- module.get_options(hash)
