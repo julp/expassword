@@ -35,7 +35,7 @@ defmodule ExPassword.Bcrypt do
   end
 
   @impl ExPassword.Algorithm
-  def verify?(hash, password) do
+  def verify?(password, hash) do
     code = ~S"""
     list(, $password, $hash) = $argv;
     echo password_verify(
