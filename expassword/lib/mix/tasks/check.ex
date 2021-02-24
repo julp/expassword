@@ -25,7 +25,7 @@ defmodule Mix.Tasks.ExPassword.Check do
       #_ ->
         #System.halt(:abort)
     #end
-    IO.puts "ExPassword.verify?(#{inspect(hash)}, #{inspect(password)}) = #{inspect(result)}"
+    IO.puts "ExPassword.verify?(#{inspect(password)}, #{inspect(hash)}) = #{inspect(result)}"
     {:ok, options} = ExPassword.get_options(hash)
     print_options(options)
   end

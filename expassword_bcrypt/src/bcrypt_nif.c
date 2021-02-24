@@ -63,11 +63,6 @@
 # define EXPORT_IF_STANDALONE /* NOP */
 #endif /* !STANDALONE */
 
-/* <default values> */
-#define DEFAULT_BCRYPT_COST 10
-// #define DEFAULT_SALT_LENGTH 16
-/* </default values> */
-
 static const uint8_t Base64Code[] = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
 
 static const uint8_t index_64[] = {
@@ -190,7 +185,7 @@ static bool extract_options_from_erlang_map(ErlNifEnv *env, ERL_NIF_TERM map, in
     if (enif_get_map_value(env, map, atom_cost, &value) && enif_get_int(env, value, cost)) {
         // ok
     } else {
-        *cost = DEFAULT_BCRYPT_COST;
+        *cost = 0;
     }
 
     return *cost >= BCRYPT_MINLOGROUNDS && *cost <= BCRYPT_MAXLOGROUNDS;

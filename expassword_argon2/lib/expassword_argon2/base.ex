@@ -23,8 +23,8 @@ defmodule ExPassword.Argon2.Base do
   def hash_nif(password, salt, options)
   def hash_nif(_password, _salt, _options), do: :erlang.nif_error(:not_loaded)
 
-  def verify_nif(hash, password)
-  def verify_nif(_hash, _password), do: :erlang.nif_error(:not_loaded)
+  def verify_nif(password, hash)
+  def verify_nif(_password, _hash), do: :erlang.nif_error(:not_loaded)
 
   def get_options_nif(hash)
   def get_options_nif(_hash), do: :erlang.nif_error(:not_loaded)

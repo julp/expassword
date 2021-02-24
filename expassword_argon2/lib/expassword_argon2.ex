@@ -11,8 +11,25 @@ defmodule ExPassword.Argon2 do
   alias ExPassword.Argon2.Base
 
   @default_salt_length 16
-  #@default_options %{type: :argon2id, threads: 2, memory_cost: 131072, time_cost: 4}
-  @default_options Enum.into(Application.get_all_env(:expassword_argon2), %{})
+
+  defguardp is_valid_type(type) when type in ~W[argon2i argon2id]a
+  defguardp is_valid_threads(threads) when is_integer(threads) and threads >= 1
+  defguardp is_valid_time_cost(time_cost) when is_integer(time_cost) and time_cost >= 1
+  defguardp is_valid_memory_cost(memory_cost) when is_integer(memory_cost) and memory_cost >= 16
+
+  defp raise_invalid_options(options) do
+    raise ArgumentError, """
+    Expected options parameter to have the following keys:
+
+    - type: the atom :argon2i or :argon2id
+    - threads: an integer >= 1
+    - time_cost: an integer >= 1
+    - memory_cost: an integer >= 16
+    - version (optional): the integer 16 or 19
+
+    Instead, got: #{inspect(options)}
+    """
+  end
 
   @doc """
   Computes the hash for *password*. A salt of #{@default_salt_length} bytes is randomly generated
@@ -31,8 +48,14 @@ defmodule ExPassword.Argon2 do
   """
   # NOTE: version option is voluntarily not documented
   @impl ExPassword.Algorithm
-  def hash(password, options) do
-    Base.hash_nif(password, :crypto.strong_rand_bytes(@default_salt_length), Map.merge(@default_options, options))
+  def hash(password, options = %{type: type, threads: threads, time_cost: time_cost, memory_cost: memory_cost})
+    when is_valid_type(type) and is_valid_threads(threads) and is_valid_time_cost(time_cost) and is_valid_memory_cost(memory_cost)
+  do
+    Base.hash_nif(password, :crypto.strong_rand_bytes(@default_salt_length), options)
+  end
+
+  def hash(_password, options) do
+    raise_invalid_options(options)
   end
 
   @doc ~S"""
@@ -41,8 +64,8 @@ defmodule ExPassword.Argon2 do
   An `ArgumentError` will be raised if the hash is somehow invalid or if an internal error occurs.
   """
   @impl ExPassword.Algorithm
-  def verify?(hash, password) do
-    Base.verify_nif(hash, password)
+  def verify?(password, hash) do
+    Base.verify_nif(password, hash)
   end
 
   @doc ~S"""
@@ -64,8 +87,14 @@ defmodule ExPassword.Argon2 do
   means you should rehash the password to update its hash.
   """
   @impl ExPassword.Algorithm
-  def needs_rehash?(hash, options) do
+  def needs_rehash?(hash, options = %{type: type, threads: threads, time_cost: time_cost, memory_cost: memory_cost})
+    when is_valid_type(type) and is_valid_threads(threads) and is_valid_time_cost(time_cost) and is_valid_memory_cost(memory_cost)
+  do
     Base.needs_rehash_nif(hash, options)
+  end
+
+  def needs_rehash?(_hash, options) do
+    raise_invalid_options(options)
   end
 
   @doc ~S"""

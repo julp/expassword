@@ -11,7 +11,18 @@ defmodule ExPassword.Bcrypt do
   alias ExPassword.Bcrypt.Base
 
   @default_salt_length 16
-  @default_options Enum.into(Application.get_all_env(:expassword_bcrypt), %{})
+
+  defguardp is_valid_cost(cost) when is_integer(cost) and cost >= 4 and cost <= 31
+
+  defp raise_invalid_options(options) do
+    raise ArgumentError, """
+    Expected options parameter to have the following key:
+
+    - cost: an integer in the [4;31] range
+
+    Instead, got: #{inspect(options)}
+    """
+  end
 
   @doc """
   Computes the hash for *password*. A salt of #{@default_salt_length} bytes is randomly generated
@@ -26,9 +37,18 @@ defmodule ExPassword.Bcrypt do
   """
   # NOTE: version option is voluntarily not documented
   @impl ExPassword.Algorithm
-  def hash(password, options) do
-    salt = Base.generate_salt_nif(:crypto.strong_rand_bytes(@default_salt_length), Map.merge(@default_options, options))
+  def hash(password, options = %{cost: cost})
+    when is_valid_cost(cost) # and map_size(options) == 1
+  do
+    salt =
+      @default_salt_length
+      |> :crypto.strong_rand_bytes()
+      |> Base.generate_salt_nif(options)
     Base.hash_nif(password, salt)
+  end
+
+  def hash(_password, options) do
+    raise_invalid_options(options)
   end
 
   @doc ~S"""
@@ -37,8 +57,8 @@ defmodule ExPassword.Bcrypt do
   An `ArgumentError` will be raised if the hash is somehow invalid or if an internal error occurs.
   """
   @impl ExPassword.Algorithm
-  def verify?(hash, password) do
-    Base.verify_nif(hash, password)
+  def verify?(password, hash) do
+    Base.verify_nif(password, hash)
   end
 
   @doc ~S"""
@@ -60,8 +80,14 @@ defmodule ExPassword.Bcrypt do
   means you should rehash the password to update its hash.
   """
   @impl ExPassword.Algorithm
-  def needs_rehash?(hash, options) do
+  def needs_rehash?(hash, options = %{cost: cost})
+    when is_valid_cost(cost) # and map_size(options) == 1
+  do
     Base.needs_rehash_nif(hash, options)
+  end
+
+  def needs_rehash?(_hash, options) do
+    raise_invalid_options(options)
   end
 
   @doc ~S"""

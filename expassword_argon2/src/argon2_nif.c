@@ -57,52 +57,53 @@
 #include "atoms.h"
 #undef ATOM
 
-/* <default values> */
-#define DEFAULT_ARGON2_TYPE Argon2_id
-#define DEFAULT_THREADS 2
-#define DEFAULT_TIME_COST 4
-#define DEFAULT_MEMORY_COST (1<<17)
-// #define DEFAULT_SALT_LENGTH 16
-/* </default values> */
-
 static bool extract_options_from_erlang_map(ErlNifEnv *env, ERL_NIF_TERM map, argon2_type *type, uint32_t *version, uint32_t *threads, uint32_t *time_cost, uint32_t *memory_cost)
 {
-    ERL_NIF_TERM value;
+    bool ok;
 
-    *type = DEFAULT_ARGON2_TYPE;
-    if (enif_get_map_value(env, map, atom_type, &value)) {
-        if (enif_is_identical(value, atom_argon2i)) {
-            *type = Argon2_i;
-        } else if (enif_is_identical(value, atom_argon2id)) {
-            *type = Argon2_id;
+    ok = false;
+    do {
+        ERL_NIF_TERM value;
+
+        if (enif_get_map_value(env, map, atom_type, &value)) {
+            if (enif_is_identical(value, atom_argon2i)) {
+                *type = Argon2_i;
+            } else if (enif_is_identical(value, atom_argon2id)) {
+                *type = Argon2_id;
+            } else {
+                break;
+            }
+        } else {
+            break;
         }
-    }
 
-    if (enif_get_map_value(env, map, atom_version, &value) && enif_get_uint32(env, value, version)) {
-        // ok but we let argon2 decide if the value is valid or not
-    } else {
-        *version = ARGON2_VERSION_NUMBER;
-    }
+        if (enif_get_map_value(env, map, atom_version, &value) && enif_get_uint32(env, value, version)) {
+            // ok but we let argon2 decide if the value is valid or not
+        } else {
+            *version = ARGON2_VERSION_NUMBER;
+        }
 
-    if (enif_get_map_value(env, map, atom_threads, &value) && enif_get_uint32(env, value, threads)) {
-        // ok but we let argon2 decide if the value is valid or not
-    } else {
-        *threads = DEFAULT_THREADS;
-    }
+        if (enif_get_map_value(env, map, atom_threads, &value) && enif_get_uint32(env, value, threads)) {
+            // ok but we let argon2 decide if the value is valid or not
+        } else {
+            break;
+        }
 
-    if (enif_get_map_value(env, map, atom_time_cost, &value) && enif_get_uint32(env, value, time_cost)) {
-        // ok but we let argon2 decide if the value is valid or not
-    } else {
-        *time_cost = DEFAULT_TIME_COST;
-    }
+        if (enif_get_map_value(env, map, atom_time_cost, &value) && enif_get_uint32(env, value, time_cost)) {
+            // ok but we let argon2 decide if the value is valid or not
+        } else {
+            break;
+        }
 
-    if (enif_get_map_value(env, map, atom_memory_cost, &value) && enif_get_uint32(env, value, memory_cost)) {
-        // ok but we let argon2 decide if the value is valid or not
-    } else {
-        *memory_cost = DEFAULT_MEMORY_COST;
-    }
+        if (enif_get_map_value(env, map, atom_memory_cost, &value) && enif_get_uint32(env, value, memory_cost)) {
+            // ok but we let argon2 decide if the value is valid or not
+        } else {
+            break;
+        }
+        ok = true;
+    } while (false);
 
-    return true;
+    return ok;
 }
 
 static bool argon2_valid_hash(const ErlNifBinary *hash, argon2_type *type)
@@ -221,7 +222,7 @@ static ERL_NIF_TERM expassword_argon2_hash_nif(ErlNifEnv *env, int argc, const E
 
         encoded_len = argon2_encodedlen(time_cost, memory_cost, threads, salt.size, STR_SIZE(out), type);
         {
-            char buffer[encoded_len]; // TODO: VLA
+            char buffer[encoded_len];
 
             status = argon2_hash(time_cost, memory_cost, threads, password.data, password.size, salt.data, salt.size, out, STR_SIZE(out), buffer, encoded_len, type, version);
             if (ARGON2_OK == status) {
@@ -256,7 +257,7 @@ static ERL_NIF_TERM expassword_argon2_verify_nif(ErlNifEnv *env, int argc, const
         && argon2_valid_hash(&hash, &type)
     ) {
         argon2_error_codes status;
-        char buffer[hash.size + 1]; // TODO: VLA
+        char buffer[hash.size + 1];
 
         memcpy(buffer, (const char *) hash.data, hash.size);
         buffer[hash.size] = '\0';
