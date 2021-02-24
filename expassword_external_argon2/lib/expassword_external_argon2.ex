@@ -1,4 +1,4 @@
-defmodule ExPassword.ExternalArgon2 do
+defmodule ExPassword.Argon2 do
   use ExPassword.Algorithm
 
   @invalid {:error, :invalid}
@@ -30,13 +30,14 @@ defmodule ExPassword.ExternalArgon2 do
     time_cost = Map.get(options, :time_cost, 4)
     threads = Map.get(options, :threads, 2)
     code = ~S"""
+    list(, $password, $algorithm, $memory_cost, $time_cost, $threads) = $argv;
     echo password_hash(
-      $argv[1],
-      constant($argv[2]),
+      $password,
+      constant($algorithm),
       [
-        'memory_cost' => $argv[3],
-        'time_cost' => $argv[4],
-        'threads' => $argv[5],
+        'memory_cost' => $memory_cost,
+        'time_cost' => $time_cost,
+        'threads' => $threads,
       ]
     );
     """
@@ -47,9 +48,10 @@ defmodule ExPassword.ExternalArgon2 do
   @impl ExPassword.Algorithm
   def verify?(hash, password) do
     code = ~S"""
+    list(, $password, $hash) = $argv;
     echo password_verify(
-      $argv[1],
-      $argv[2]
+      $password,
+      $hash
     );
     """
     {result, 0} = System.cmd("php", ["-r", code, "--", password, hash])
@@ -127,9 +129,13 @@ defmodule ExPassword.ExternalArgon2 do
 
   @impl ExPassword.Algorithm
   def needs_rehash?(hash, new_options) do
-    {:ok, old_options} = get_options(hash)
-    #Map.delete(old_options, :provider) != new_options
-    old_options != new_options
+    case get_options(hash) do
+      {:ok, old_options} ->
+        #Map.delete(old_options, :provider) != new_options
+        old_options != new_options
+      _ ->
+        raise ArgumentError
+    end
   end
 
   @impl ExPassword.Algorithm

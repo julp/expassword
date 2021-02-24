@@ -8,6 +8,7 @@ defmodule ExPassword.ExternalBcrypt.MixProject do
       elixir: "~> 1.5",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
+      test_paths: ~W[../expassword_bcrypt/test],
       deps: deps()
     ]
   end
@@ -22,8 +23,8 @@ defmodule ExPassword.ExternalBcrypt.MixProject do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
-  defp elixirc_paths(_), do: ["lib"]
+  defp elixirc_paths(:test), do: ~W[lib ../expassword_bcrypt/test/support]
+  defp elixirc_paths(_), do: ~W[lib]
 
   # Specifies your project dependencies.
   #
