@@ -2,8 +2,6 @@ defmodule ExPassword.Argon2 do
   use ExPassword.Algorithm
 
   @invalid {:error, :invalid}
-  @default_options %{type: :argon2id, threads: 2, memory_cost: 131072, time_cost: 4}
-  #@default_options Enum.into(Application.get_all_env(:expassword_argon2), %{})
 
   if :prod == Mix.env() do
     raise ~S"""
@@ -17,18 +15,35 @@ defmodule ExPassword.Argon2 do
     """
   end
 
+  defguardp is_valid_type(type) when type in ~W[argon2i argon2id]a
+  defguardp is_valid_threads(threads) when is_integer(threads) and threads >= 1
+  defguardp is_valid_time_cost(time_cost) when is_integer(time_cost) and time_cost >= 1
+  defguardp is_valid_memory_cost(memory_cost) when is_integer(memory_cost) and memory_cost >= 16
+
+  defp raise_invalid_options(options) do
+    raise ArgumentError, """
+    Expected options parameter to have the following keys:
+
+    - type: the atom :argon2i or :argon2id
+    - threads: an integer >= 1
+    - time_cost: an integer >= 1
+    - memory_cost: an integer >= 16
+    - version (optional): the integer 16 or 19
+
+    Instead, got: #{inspect(options)}
+    """
+  end
+
   @impl ExPassword.Algorithm
-  def hash(password, options) do
-    options = Map.merge(@default_options, options)
-    algo = case Map.get(options, :type, :argon2i) do
+  def hash(password, %{type: type, threads: threads, time_cost: time_cost, memory_cost: memory_cost})
+    when is_valid_type(type) and is_valid_threads(threads) and is_valid_time_cost(time_cost) and is_valid_memory_cost(memory_cost)
+  do
+    algo = case type do
       :argon2i ->
         "PASSWORD_ARGON2I"
       :argon2id ->
         "PASSWORD_ARGON2ID"
     end
-    memory_cost = Map.get(options, :memory_cost, 131072)
-    time_cost = Map.get(options, :time_cost, 4)
-    threads = Map.get(options, :threads, 2)
     code = ~S"""
     list(, $password, $algorithm, $memory_cost, $time_cost, $threads) = $argv;
     echo password_hash(
@@ -43,6 +58,10 @@ defmodule ExPassword.Argon2 do
     """
     {result, 0} = System.cmd("php", ["-r", code, "--", password, algo, to_string(memory_cost), to_string(time_cost), to_string(threads)])
     String.trim_trailing(result, "\r\n")
+  end
+
+  def hash(_password, options) do
+    raise_invalid_options(options)
   end
 
   @impl ExPassword.Algorithm
@@ -128,7 +147,9 @@ defmodule ExPassword.Argon2 do
   end
 
   @impl ExPassword.Algorithm
-  def needs_rehash?(hash, new_options) do
+  def needs_rehash?(hash, new_options = %{type: type, threads: threads, time_cost: time_cost, memory_cost: memory_cost})
+    when is_valid_type(type) and is_valid_threads(threads) and is_valid_time_cost(time_cost) and is_valid_memory_cost(memory_cost)
+  do
     case get_options(hash) do
       {:ok, old_options} ->
         #Map.delete(old_options, :provider) != new_options
@@ -136,6 +157,10 @@ defmodule ExPassword.Argon2 do
       _ ->
         raise ArgumentError
     end
+  end
+
+  def needs_rehash?(_hash, options) do
+    raise_invalid_options(options)
   end
 
   @impl ExPassword.Algorithm

@@ -12,8 +12,10 @@ defmodule ExPassword.Argon2.VerifyTest do
       assert false == ExPassword.Argon2.verify?("", "$argon2i$v=19$m=65536,t=4,p=1$QkVwSmdNQnAwY1o5TlZsMg$AuPZJDo9v26VWjUCG0L9bvMonSwbP7qM5BGsXEee8ZE")
       assert false == ExPassword.Argon2.verify?("", "$argon2id$v=19$m=65536,t=4,p=1$OTM4QldzYkpMZE80TmJWNQ$kFiMuJfI8ysIJ3E8xRwzsyZiJSPrCCkcZ9XjGiduSfU")
 
-      assert true == ExPassword.Argon2.verify?("password\x00", "$argon2i$v=19$m=65536,t=4,p=1$LnZlVExxV3J2Z21XaVEzWA$OTNjGhhSqY0Mz7J/M9shOpm68YIbI0o1osQ/DLYLGTE")
-      assert true == ExPassword.Argon2.verify?("password\x00", "$argon2id$v=19$m=65536,t=4,p=1$Rk9TcGl5eDNveUZGb2FKMw$A1rRtokCQjmzApNyZQj1dJNnwEgJcIfRsAagV39WNIc")
+      if Code.ensure_loaded?(ExPassword.Argon2.Base) do
+        assert true == ExPassword.Argon2.verify?("password\x00", "$argon2i$v=19$m=65536,t=4,p=1$LnZlVExxV3J2Z21XaVEzWA$OTNjGhhSqY0Mz7J/M9shOpm68YIbI0o1osQ/DLYLGTE")
+        assert true == ExPassword.Argon2.verify?("password\x00", "$argon2id$v=19$m=65536,t=4,p=1$Rk9TcGl5eDNveUZGb2FKMw$A1rRtokCQjmzApNyZQj1dJNnwEgJcIfRsAagV39WNIc")
+      end
 
       assert false == ExPassword.Argon2.verify?("password", "$argon2i$v=19$m=65536,t=4,p=1$LnZlVExxV3J2Z21XaVEzWA$OTNjGhhSqY0Mz7J/M9shOpm68YIbI0o1osQ/DLYLGTE")
       assert false == ExPassword.Argon2.verify?("password", "$argon2id$v=19$m=65536,t=4,p=1$Rk9TcGl5eDNveUZGb2FKMw$A1rRtokCQjmzApNyZQj1dJNnwEgJcIfRsAagV39WNIc")

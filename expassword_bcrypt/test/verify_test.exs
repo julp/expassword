@@ -12,8 +12,10 @@ defmodule ExPassword.Bcrypt.VerifyTest do
       assert false == ExPassword.Bcrypt.verify?("", "$2y$04$5LEzpJFJbsVLiAPtunma.eWxP0D4CvNd5fw4cV9wT3cSCO.5oG4iO")
       assert false == ExPassword.Bcrypt.verify?("", "$2y$10$26108htOOGxDvB0pR82L8eYluJgCNCCJr1opIwzM0Te3zJmp29Rmy")
 
-      assert false == ExPassword.Bcrypt.verify?("password\x00", "$2y$04$GQ8fkszdqnITr1NAbV373egWUmXr7pSPDCV7OaJ1r0ftWsM5ALnOW")
-      assert false == ExPassword.Bcrypt.verify?("password\x00", "$2y$10$JDQ/0aKg9CgK5vsN37CaQeTSYtg9Y1Ob2Mv7QDozKIGuNQrzHE6uW")
+      if Code.ensure_loaded?(ExPassword.Bcrypt.Base) do
+        assert false == ExPassword.Bcrypt.verify?("password\x00", "$2y$04$GQ8fkszdqnITr1NAbV373egWUmXr7pSPDCV7OaJ1r0ftWsM5ALnOW")
+        assert false == ExPassword.Bcrypt.verify?("password\x00", "$2y$10$JDQ/0aKg9CgK5vsN37CaQeTSYtg9Y1Ob2Mv7QDozKIGuNQrzHE6uW")
+      end
 
       assert true == ExPassword.Bcrypt.verify?("password", "$2y$04$GQ8fkszdqnITr1NAbV373egWUmXr7pSPDCV7OaJ1r0ftWsM5ALnOW")
       assert true == ExPassword.Bcrypt.verify?("password", "$2y$10$JDQ/0aKg9CgK5vsN37CaQeTSYtg9Y1Ob2Mv7QDozKIGuNQrzHE6uW")

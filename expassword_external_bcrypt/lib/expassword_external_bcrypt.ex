@@ -1,9 +1,6 @@
 defmodule ExPassword.Bcrypt do
   use ExPassword.Algorithm
 
-  @default_options %{cost: 10}
-  #@default_options Enum.into(Application.get_all_env(:expassword_argon2), %{})
-
   if :prod == Mix.env() do
     raise ~S"""
     :expassword_external_bcrypt is only intended to be used on a development and/or
@@ -16,10 +13,20 @@ defmodule ExPassword.Bcrypt do
     """
   end
 
+  defguardp is_valid_cost(cost) when is_integer(cost) and cost >= 4 and cost <= 31
+
+  defp raise_invalid_options(options) do
+    raise ArgumentError, """
+    Expected options parameter to have the following key:
+    - cost: an integer in the [4;31] range
+    Instead, got: #{inspect(options)}
+    """
+  end
+
   @impl ExPassword.Algorithm
-  def hash(password, options) do
-    options = Map.merge(@default_options, options)
-    cost = Map.get(options, :cost, 2)
+  def hash(password, %{cost: cost})
+    when is_valid_cost(cost)
+  do
     code = ~S"""
     list(, $password, $cost) = $argv;
     echo password_hash(
@@ -31,7 +38,13 @@ defmodule ExPassword.Bcrypt do
     );
     """
     {result, 0} = System.cmd("php", ["-r", code, "--", password, to_string(cost)])
-    String.trim_trailing(result, "\r\n")
+    result
+    |> String.trim_trailing("\r\n")
+    |> String.replace_prefix("$2y$", "$2b$")
+  end
+
+  def hash(_password, options) do
+    raise_invalid_options(options)
   end
 
   @impl ExPassword.Algorithm
@@ -63,7 +76,9 @@ defmodule ExPassword.Bcrypt do
   end
 
   @impl ExPassword.Algorithm
-  def needs_rehash?(hash, new_options) do
+  def needs_rehash?(hash, new_options = %{cost: cost})
+    when is_valid_cost(cost)
+  do
     case get_options(hash) do
       {:ok, old_options} ->
         #Map.delete(old_options, :provider) != new_options
@@ -71,6 +86,10 @@ defmodule ExPassword.Bcrypt do
       _ ->
         raise ArgumentError
     end
+  end
+
+  def needs_rehash?(_hash, options) do
+    raise_invalid_options(options)
   end
 
   @impl ExPassword.Algorithm
