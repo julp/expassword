@@ -384,8 +384,8 @@ static ERL_NIF_TERM expassword_bcrypt_generate_salt_nif(ErlNifEnv *env, int argc
     if (
            2 == argc
         && enif_inspect_binary(env, argv[0], &raw_salt)
-        && enif_is_map(env, argv[2])
-        && extract_options_from_erlang_map(env, argv[2], &cost)
+        && enif_is_map(env, argv[1])
+        && extract_options_from_erlang_map(env, argv[1], &cost)
     ) {
         uint8_t salt[BCRYPT_SALTSPACE];
 
@@ -512,23 +512,18 @@ static ERL_NIF_TERM expassword_bcrypt_get_options_nif(ErlNifEnv *env, int argc, 
 
 static ERL_NIF_TERM expassword_bcrypt_needs_rehash_nif(ErlNifEnv *env, int argc, const ERL_NIF_TERM argv[])
 {
-    int new_cost;
     ErlNifBinary hash;
     ERL_NIF_TERM output;
+    int old_cost, new_cost;
 
     if (
            2 == argc
         && enif_inspect_binary(env, argv[0], &hash)
         && enif_is_map(env, argv[1])
         && extract_options_from_erlang_map(env, argv[1], &new_cost)
+        && bcrypt_valid_hash(&hash)
+        && bcrypt_parse_hash(&hash, &old_cost)
     ) {
-        int old_cost;
-
-        if (bcrypt_valid_hash(&hash) && bcrypt_parse_hash(&hash, &old_cost)) {
-            // OK, NOP
-        } else {
-            old_cost = 0;
-        }
         output = old_cost != new_cost ? atom_true : atom_false;
     } else {
         output = enif_make_badarg(env);

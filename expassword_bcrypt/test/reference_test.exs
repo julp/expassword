@@ -1,4 +1,4 @@
-if Code.ensure_loaded?(ExPassword.BCrypt.Base) do
+if Code.ensure_loaded?(ExPassword.Bcrypt.Base) do
   defmodule ExPassword.Bcrypt.ReferenceTest do
     use ExUnit.Case
 
