@@ -5,33 +5,15 @@ defmodule ExPassword do
 
   @type algorithm :: module
 
-  @known_algorithms [
-    # implies :expassword_bcrypt listed as dependency in your mix.exs
-    ExPassword.Bcrypt,
-    # implies :expassword_argon2 listed as dependency in your mix.exs
-    ExPassword.Argon2,
-    # <testing only>
-    ExPassword.Test.MD5,
-    ExPassword.Test.SHA1,
-    ExPassword.Test.SSHA,
-    # </testing only>
-  ]
-  @available_algorithms for algorithm <- @known_algorithms, {:module, algorithm} == Code.ensure_compiled(algorithm), do: algorithm
-
   @doc false
   @spec find_algorithm(hash :: ExPassword.Algorithm.hash) :: algorithm | nil
   def find_algorithm(hash) do
-    @available_algorithms
+    available_algorithms()
     |> Enum.find(nil, &(&1.valid?(hash)))
   end
 
-  @doc ~S"""
-  Returns the list of the modules that currently (at compile time) are enabled and provide support to ExPassword for a hashing method
-  """
-  @spec available_algorithms() :: [algorithm]
-  def available_algorithms do
-    @available_algorithms
-  end
+  # for compat with previous version
+  defdelegate available_algorithms(), to: ExPassword.Registry
 
   @doc ~S"""
   This a convenient function which handles ExPassword.verify?/2 and ExPassword.needs_rehash?/3 for you (and takes care of timing attacks)
@@ -115,7 +97,7 @@ defmodule ExPassword do
   """
   @spec hash(algorithm :: algorithm, password :: ExPassword.Algorithm.password, options :: ExPassword.Algorithm.options) :: ExPassword.Algorithm.hash | no_return
   def hash(algorithm, password, options = %{})
-    when algorithm in @available_algorithms and is_binary(password)
+    when is_binary(password)
   do
     algorithm.hash(password, options)
   end
@@ -142,7 +124,7 @@ defmodule ExPassword do
   """
   @spec needs_rehash?(algorithm :: algorithm, hash :: ExPassword.Algorithm.hash, options :: ExPassword.Algorithm.options) :: boolean | no_return
   def needs_rehash?(algorithm, hash, options = %{})
-    when algorithm in @available_algorithms and is_binary(hash)
+    when is_binary(hash)
   do
     case find_algorithm(hash) do
       ^algorithm ->

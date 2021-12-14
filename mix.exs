@@ -7,7 +7,7 @@ defmodule ExPassword.MixProject do
   def project do
     [
       app: :expassword,
-      version: "0.1.0",
+      version: "0.2.0",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -29,9 +29,6 @@ defmodule ExPassword.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:expassword_algorithm, "~> 0.1"},
-      {:expassword_bcrypt, "~> 0.1", optional: true},
-      {:expassword_argon2, "~> 0.1", optional: true},
       {:earmark, "~> 1.4", only: :dev},
       {:ex_doc, "~> 0.22", only: :dev},
       {:dialyxir, "~> 1.1", only: ~W[dev test]a, runtime: false},

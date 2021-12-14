@@ -11,4 +11,12 @@ defmodule ExPassword.Test.Set do
       @behaviour unquote(__MODULE__)
     end
   end
+
+  def algorithms do
+    [
+      ExPassword.Test.MD5,
+      ExPassword.Test.SHA1,
+      ExPassword.Test.SSHA,
+    ]
+  end
 end
